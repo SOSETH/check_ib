@@ -24,14 +24,14 @@ public:
         return guid;
     }
 
-    const std::list<IBPort> &getPorts() const {
+    const std::list<IBPort*> &getPorts() const {
         return ports;
     }
 
 protected:
     uint64_t guid;
     unsigned int numPorts;
-    std::list<IBPort> ports;
+    std::list<IBPort*> ports;
     IBPortRegistry registry;
 };
 

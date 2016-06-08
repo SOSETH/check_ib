@@ -18,8 +18,8 @@ public:
     void registerInterestFor(uint64_t guid, IBPort&);
 
 protected:
-    std::map<uint64_t, IBPort> portRegistry;
-    std::map<uint64_t, std::list<IBPort>> interestRegistry;
+    std::map<uint64_t, IBPort*> portRegistry;
+    std::map<uint64_t, std::list<IBPort*>> interestRegistry;
 };
 
 

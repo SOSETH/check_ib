@@ -10,7 +10,8 @@ IBHost::IBHost(ibnd_node_t *host, IBPortRegistry & myRegistry) : registry(myRegi
     guid =  mad_get_field(host->info, 0, IB_NODE_SYSTEM_GUID_F);
     numPorts = static_cast<unsigned int>(host->numports);
     for (int i = 0; i <= numPorts; i++) {
-        ports.push_back(IBPort(*this, host->ports[i], registry));
+        if (host->ports[i])
+            ports.push_back(new IBPort(*this, host->ports[i], registry));
     }
 }
 
@@ -25,7 +26,7 @@ std::ostream& operator<<(std::ostream& stream, const IBHost& host) {
             << "\tGUID: " << host.getGUID() << std::endl
             << "\tNumber of ports: " << host.getNumPorts() << std::endl;
     for (auto ports = host.getPorts().begin(); ports != host.getPorts().end(); ++ports)
-        stream << (*ports) << std::endl;
+        stream << *(*ports) << std::endl;
     return stream;
 }
 
