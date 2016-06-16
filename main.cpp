@@ -2,6 +2,7 @@
 
 #include <list>
 #include <infiniband/ibnetdisc.h>
+#include <memory>
 #include "IBHost.h"
 
 int main() {
@@ -16,14 +17,14 @@ int main() {
     }
 
     ibnd_node_t* node = fabric->nodes;
-    std::list<IBHost> hosts;
-    IBPortRegistry reg;
+    std::list<std::shared_ptr<IBHost>> hosts;
+    auto reg = std::make_shared<IBPortRegistry>();
     while (node) {
-        hosts.push_back(IBHost(node, reg));
+        hosts.push_back(IBHost::make_host(node, reg));
         node = node->next;
     }
 
-    for (auto iterator = hosts.begin(); iterator != hosts.end(); ++iterator) {
+    for (auto iterator = hosts.begin(); iterator != hosts.end(); iterator++) {
         std::cout << (*iterator) << std::endl;
     }
 

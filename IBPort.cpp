@@ -6,7 +6,7 @@
 #include "IBPortRegistry.h"
 #include "IBPort.h"
 
-IBPort::IBPort(IBHost & myHost, ibnd_port_t* port, IBPortRegistry & registry) : host(myHost) {
+IBPort::IBPort(std::shared_ptr<IBHost> myHost, ibnd_port_t* port) : host(myHost) {
     linkWidthEnabled = mad_get_field(port->info, 0, IB_PORT_LINK_WIDTH_ENABLED_F);
     linkWidthActive = getLinkWidthFromInt(mad_get_field(port->info, 0, IB_PORT_LINK_WIDTH_ACTIVE_F));
     linkWidthSupported = mad_get_field(port->info, 0, IB_PORT_LINK_WIDTH_SUPPORTED_F);
@@ -22,17 +22,18 @@ IBPort::IBPort(IBHost & myHost, ibnd_port_t* port, IBPortRegistry & registry) : 
     errorsOverrun = mad_get_field(port->info, 0, IB_PORT_OVERRUN_ERR_F);
     guid = port->guid;
     portNum = static_cast<unsigned int>(port->portnum);
-    if (port->remoteport) {
-        if (registry.hasPortWithGUID(port->remoteport->guid))
-            this->peer = &registry.getPortWithGUID(port->remoteport->guid);
-        else
-            registry.registerInterestFor(port->remoteport->guid, *this);
-    }
-    registry.registerPort(*this);
 }
 
-IBPort::IBPort() {
-    // Do nothing -> dummy object
+std::shared_ptr<IBPort> IBPort::make_port(std::shared_ptr<IBHost> myHost, ibnd_port_t* port, std::shared_ptr<IBPortRegistry> registry) {
+    std::shared_ptr<IBPort> retval(new IBPort(myHost, port));
+    if (port->remoteport) {
+        if (registry->hasPortWithGUID(port->remoteport->guid))
+            retval->peer = registry->getPortWithGUID(port->remoteport->guid);
+        else
+            registry->registerInterestFor(port->remoteport->guid, retval);
+    }
+    registry->registerPort(retval);
+    return retval;
 }
 
 IBPort::LinkSpeed IBPort::getLinkSpeedFromInt(const uint32_t lsInt) const {
@@ -64,14 +65,14 @@ IBPort::LinkWidth IBPort::getLinkWidthFromInt(const uint32_t lwInt) const {
 }
 
 IBPort::PHYSPortState IBPort::getPHYSPortStateFromInt(const uint32_t ppsInt) const {
-    if (0 <= ppsInt && ppsInt <= 7)
+    if (ppsInt <= 7)
         return static_cast<PHYSPortState>(ppsInt);
     else
         throw "Unknown physical port state";
 }
 
 IBPort::LogPortState IBPort::getLogPortStateFromInt(const uint32_t lpsInt) const {
-    if (0 <= lpsInt && lpsInt <= 4)
+    if (lpsInt <= 4)
         return static_cast<LogPortState>(lpsInt);
     else
         throw "Unknown logical port state";
@@ -117,33 +118,33 @@ IBPort::LinkWidth IBPort::getMaxLinkWidthSupported() const {
         return LW_1;
 }
 
-std::ostream& operator<<(std::ostream& stream, const IBPort& port) {
-    stream << "Port GUID " << std::hex << port.getGuid() << std::dec << ", port number " << port.getPortNum() << std::endl
+std::ostream& operator<<(std::ostream& stream, const IBPort* port) {
+    stream << "Port GUID " << std::hex << port->getGuid() << std::dec << ", port number " << port->getPortNum() << std::endl
             << "\t Link:" << std::endl
-            << "\t\tWidth " << port.getLinkWidthActive();
-
-    if (port.getLinkWidthActive() < port.getMaxLinkWidthEnabled())
-        stream << " out of " << port.getMaxLinkWidthSupported();
-    if (port.getMaxLinkWidthEnabled() < port.getMaxLinkWidthSupported())
-        stream <<"(" << port.getMaxLinkWidthEnabled() << " enabled)";
-
-    stream << std::endl
-            << "\t\tRate " << port.getLinkSpeedActive();
-
-    if (port.getLinkSpeedActive() < port.getMaxLinkSpeedEnabled())
-        stream << " out of " << port.getMaxLinkSpeedSupported();
-    if (port.getMaxLinkSpeedEnabled() < port.getMaxLinkSpeedSupported())
-        stream <<"(" << port.getMaxLinkSpeedEnabled() << " enabled)";
+            << "\t\tWidth " << port->getLinkWidthActive()
+            << " out of " << port->getMaxLinkWidthSupported()
+            << "(" << port->getMaxLinkWidthEnabled() << " enabled)" << std::endl
+            << "\t\tRate " << port->getLinkSpeedActive()
+            << " out of " << port->getMaxLinkSpeedSupported()
+            << "(" << port->getMaxLinkSpeedEnabled() << " enabled)";
 
     stream << std::endl
-            << "\t\tPhysical link state: " << port.getStatePhysical() << std::endl
-            << "\t\tLogical link state: " << port.getStateLogical() << std::endl
+            << "\t\tPhysical link state: " << port->getStatePhysical() << std::endl
+            << "\t\tLogical link state: " << port->getStateLogical() << std::endl
             << "\t Error counters: " << std::endl
-            << "\t\tPHY errors: " << port.getErrorsPhy() << std::endl
-            << "\t\tOverrun: " << port.getErrorsOverrun() << std::endl
-            << "\t\tWrong PKey: " << port.getErrorsWrongPKey() << std::endl
-            << "\t\tWrong QKey: " << port.getErrorsWrongQKey() << std::endl
-            << "\t\tWrong MKey: " << port.getErrorsWrongMKey() << std::endl;
+            << "\t\tPHY errors: " << port->getErrorsPhy() << std::endl
+            << "\t\tOverrun: " << port->getErrorsOverrun() << std::endl
+            << "\t\tWrong PKey: " << port->getErrorsWrongPKey() << std::endl
+            << "\t\tWrong QKey: " << port->getErrorsWrongQKey() << std::endl
+            << "\t\tWrong MKey: " << port->getErrorsWrongMKey() << std::endl;
+
+    if (auto peer = port->getPeer().lock()) {
+        stream << "\t Peer port:" << std::endl
+                << "\t\t GUID: " << std::hex << peer->getGuid() << std::dec << std::endl;
+
+        if (auto peerHost = peer->getHost().lock())
+            stream << "\t\t Host: " << std::hex << peerHost->getGUID() << std::dec << std::endl;
+    }
 
     return stream;
 }

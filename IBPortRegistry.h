@@ -7,19 +7,20 @@
 
 #include <map>
 #include <list>
+#include <memory>
 
 class IBPort;
 
 class IBPortRegistry {
 public:
-    void registerPort(IBPort &);
-    IBPort &getPortWithGUID(const uint64_t);
+    void registerPort(std::shared_ptr<IBPort>);
+    std::shared_ptr<IBPort> getPortWithGUID(const uint64_t);
     bool hasPortWithGUID(const uint64_t) const;
-    void registerInterestFor(uint64_t guid, IBPort&);
+    void registerInterestFor(uint64_t guid, std::shared_ptr<IBPort>);
 
 protected:
-    std::map<uint64_t, IBPort*> portRegistry;
-    std::map<uint64_t, std::list<IBPort*>> interestRegistry;
+    std::map<uint64_t, std::shared_ptr<IBPort>> portRegistry;
+    std::map<uint64_t, std::list<std::shared_ptr<IBPort>>> interestRegistry;
 };
 
 

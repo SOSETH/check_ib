@@ -12,7 +12,7 @@
 
 class IBPortRegistry;
 
-class IBPort {
+class IBPort : public std::enable_shared_from_this<IBPort> {
 public:
     enum PHYSPortState {
         NO_STATE_CHANGE = 0,
@@ -41,9 +41,9 @@ public:
     };
 
     enum LinkSpeed {
-        SDR,
-        DDR,
-        QDR
+        SDR = 1,
+        DDR = 2,
+        QDR = 4
     };
 
     unsigned int getErrorsWrongPKey() const {
@@ -106,18 +106,18 @@ public:
         return linkSpeedActive;
     }
 
-    IBPort(IBHost& host, ibnd_port_t* port, IBPortRegistry& registry);
+    static std::shared_ptr<IBPort> make_port(std::shared_ptr<IBHost>, ibnd_port_t*, std::shared_ptr<IBPortRegistry>);
 
-    const IBHost &getHost() const {
+    const std::weak_ptr<IBHost> getHost() const {
         return host;
     }
 
-    const IBPort &getPeer() const {
-        return *peer;
+    const std::weak_ptr<IBPort> getPeer() const {
+        return peer;
     }
 
-    void setPeer(IBPort &peer) {
-        this->peer = &peer;
+    void setPeer(std::shared_ptr<IBPort> peer) {
+        this->peer = peer;
     }
 
     const uint64_t getGuid() const {
@@ -125,6 +125,7 @@ public:
     }
 
 protected:
+    IBPort(std::shared_ptr<IBHost> host, ibnd_port_t* port);
     unsigned int errorsWrongPKey, errorsWrongMKey, errorsWrongQKey;
     unsigned int errorsPhy, errorsOverrun;
     PHYSPortState statePhysical;
@@ -133,8 +134,8 @@ protected:
     LinkWidth linkWidthActive;
     uint64_t guid;
     unsigned int portNum;
-    IBHost host;
-    IBPort* peer;
+    std::weak_ptr<IBHost> host;
+    std::weak_ptr<IBPort> peer;
     unsigned int linkSpeedEnabled, linkSpeedSupported;
     LinkSpeed linkSpeedActive;
 
@@ -142,13 +143,12 @@ protected:
     LinkWidth getLinkWidthFromInt(const uint32_t lwInt) const;
     PHYSPortState getPHYSPortStateFromInt(const uint32_t ppsInt) const;
     LogPortState getLogPortStateFromInt(const uint32_t lpsInt) const;
-    IBPort();
 };
 
 std::ostream& operator<<(std::ostream&, const IBPort::PHYSPortState);
 std::ostream& operator<<(std::ostream&, const IBPort::LogPortState);
 std::ostream& operator<<(std::ostream&, const IBPort::LinkWidth);
 std::ostream& operator<<(std::ostream&, const IBPort::LinkSpeed);
-std::ostream& operator<<(std::ostream&, const IBPort&);
+std::ostream& operator<<(std::ostream&, const IBPort*);
 
 #endif //CHECK_IB_IBPORT_H

@@ -7,14 +7,14 @@
 
 #include <list>
 #include <ibnetdisc.h>
+#include <memory>
 #include "IBPortRegistry.h"
 
 class IBPort;
 
-class IBHost {
+class IBHost : public std::enable_shared_from_this<IBHost>{
 public:
-    IBHost(ibnd_node_t* host, IBPortRegistry&);
-    IBHost();
+    static std::shared_ptr<IBHost> make_host(ibnd_node_t*, std::shared_ptr<IBPortRegistry>);
 
     unsigned int getNumPorts() const {
         return numPorts;
@@ -24,16 +24,17 @@ public:
         return guid;
     }
 
-    const std::list<IBPort*> &getPorts() const {
+    const std::list<std::shared_ptr<IBPort>> getPorts() const {
         return ports;
     }
 
 protected:
+    IBHost(std::shared_ptr<IBPortRegistry>);
     uint64_t guid;
     unsigned int numPorts;
-    std::list<IBPort*> ports;
-    IBPortRegistry registry;
+    std::list<std::shared_ptr<IBPort>> ports;
+    std::shared_ptr<IBPortRegistry> registry;
 };
 
-std::ostream& operator<<(std::ostream&, const IBHost&);
+std::ostream& operator<<(std::ostream&, const IBHost*);
 #endif //CHECK_IB_IBHOST_H
