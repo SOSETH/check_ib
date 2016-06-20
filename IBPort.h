@@ -43,7 +43,10 @@ public:
     enum LinkSpeed {
         SDR = 1,
         DDR = 2,
-        QDR = 4
+        QDR = 4,
+        FDR1 = 8,
+        FDR = 16,
+        EDR = 32
     };
 
     unsigned int getErrorsWrongPKey() const {
@@ -78,29 +81,33 @@ public:
         return linkWidthSupported;
     }
 
+    LinkWidth getMaxLinkWidthSupported() const {
+        return getLinkMaxWidthFromInt(linkWidthSupported);
+    }
+
     unsigned int getLinkWidthEnabled() const {
         return linkWidthEnabled;
     }
 
-    LinkWidth getMaxLinkWidthEnabled() const;
-
-    LinkWidth getMaxLinkWidthSupported() const;
+    LinkWidth getMaxLinkWidthEnabled() const {
+        return getLinkMaxWidthFromInt(linkWidthEnabled);
+    }
 
     LinkWidth getLinkWidthActive() const {
         return linkWidthActive;
     }
 
-    unsigned int getLinkSpeedEnabled() const {
+    LinkSpeed getLinkSpeedEnabled() const {
         return linkSpeedEnabled;
+    }
+
+    LinkSpeed getLinkSpeedSupported() const {
+        return linkSpeedSupported;
     }
 
     unsigned int getPortNum() const {
         return portNum;
     }
-
-    LinkSpeed getMaxLinkSpeedEnabled() const;
-
-    LinkSpeed getMaxLinkSpeedSupported() const;
 
     LinkSpeed getLinkSpeedActive() const {
         return linkSpeedActive;
@@ -130,17 +137,16 @@ protected:
     unsigned int errorsPhy, errorsOverrun;
     PHYSPortState statePhysical;
     LogPortState stateLogical;
-    unsigned int linkWidthSupported, linkWidthEnabled;
     LinkWidth linkWidthActive;
+    unsigned int linkWidthSupported, linkWidthEnabled;
     uint64_t guid;
     unsigned int portNum;
     std::weak_ptr<IBHost> host;
     std::weak_ptr<IBPort> peer;
-    unsigned int linkSpeedEnabled, linkSpeedSupported;
-    LinkSpeed linkSpeedActive;
+    LinkSpeed linkSpeedActive, linkSpeedEnabled, linkSpeedSupported;
 
-    LinkSpeed getLinkSpeedFromInt(const uint32_t lsInt) const;
-    LinkWidth getLinkWidthFromInt(const uint32_t lwInt) const;
+    LinkSpeed getMaxLinkSpeedFromInt(const uint32_t lsInt, const uint32_t fdr10, const uint32_t eSpeed) const;
+    LinkWidth getLinkMaxWidthFromInt(const uint32_t lwInt) const;
     PHYSPortState getPHYSPortStateFromInt(const uint32_t ppsInt) const;
     LogPortState getLogPortStateFromInt(const uint32_t lpsInt) const;
 };

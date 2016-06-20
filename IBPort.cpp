@@ -7,12 +7,10 @@
 #include "IBPort.h"
 
 IBPort::IBPort(std::shared_ptr<IBHost> myHost, ibnd_port_t* port) : host(myHost) {
+    unsigned int capMask = mad_get_field(port->info, 0, IB_PORT_CAPMASK_F);
     linkWidthEnabled = mad_get_field(port->info, 0, IB_PORT_LINK_WIDTH_ENABLED_F);
-    linkWidthActive = getLinkWidthFromInt(mad_get_field(port->info, 0, IB_PORT_LINK_WIDTH_ACTIVE_F));
+    linkWidthActive = getLinkMaxWidthFromInt(mad_get_field(port->info, 0, IB_PORT_LINK_WIDTH_ACTIVE_F));
     linkWidthSupported = mad_get_field(port->info, 0, IB_PORT_LINK_WIDTH_SUPPORTED_F);
-    linkSpeedActive = getLinkSpeedFromInt(mad_get_field(port->info, 0, IB_PORT_LINK_SPEED_ACTIVE_F));
-    linkSpeedEnabled = mad_get_field(port->info, 0, IB_PORT_LINK_SPEED_ENABLED_F);
-    linkSpeedSupported = mad_get_field(port->info, 0, IB_PORT_LINK_SPEED_SUPPORTED_F);
     stateLogical = getLogPortStateFromInt(mad_get_field(port->info, 0, IB_PORT_STATE_F));
     statePhysical = getPHYSPortStateFromInt(mad_get_field(port->info, 0, IB_PORT_PHYS_STATE_F));
     errorsWrongMKey = mad_get_field(port->info, 0, IB_PORT_MKEY_F);
@@ -22,6 +20,25 @@ IBPort::IBPort(std::shared_ptr<IBHost> myHost, ibnd_port_t* port) : host(myHost)
     errorsOverrun = mad_get_field(port->info, 0, IB_PORT_OVERRUN_ERR_F);
     guid = port->guid;
     portNum = static_cast<unsigned int>(port->portnum);
+
+    unsigned int extSpeed = 0, fdr10 = 0;
+    if (capMask & IB_PORT_CAP_HAS_EXT_SPEEDS) {
+        // Speed above QDR is considered "extended" and stored in a different struct...
+        extSpeed = mad_get_field(port->ext_info, 0, IB_PORT_LINK_SPEED_EXT_ACTIVE_F);
+        // ...expect for Mellanox, who do something special...
+        fdr10 = mad_get_field(port->ext_info, 0, IB_MLNX_EXT_PORT_LINK_SPEED_ACTIVE_F);
+    }
+    linkSpeedActive = getMaxLinkSpeedFromInt(mad_get_field(port->info, 0, IB_PORT_LINK_SPEED_ACTIVE_F), fdr10, extSpeed);
+    if (capMask & IB_PORT_CAP_HAS_EXT_SPEEDS) {
+        extSpeed = mad_get_field(port->ext_info, 0, IB_PORT_LINK_SPEED_EXT_ENABLED_F);
+        fdr10 = mad_get_field(port->ext_info, 0, IB_MLNX_EXT_PORT_LINK_SPEED_ENABLED_F);
+    }
+    linkSpeedEnabled = getMaxLinkSpeedFromInt(mad_get_field(port->info, 0, IB_PORT_LINK_SPEED_ENABLED_F), fdr10, extSpeed);
+    if (capMask & IB_PORT_CAP_HAS_EXT_SPEEDS) {
+        extSpeed = mad_get_field(port->ext_info, 0, IB_PORT_LINK_SPEED_EXT_SUPPORTED_F);
+        fdr10 = mad_get_field(port->ext_info, 0, IB_MLNX_EXT_PORT_LINK_SPEED_SUPPORTED_F);
+    }
+    linkSpeedSupported = getMaxLinkSpeedFromInt(mad_get_field(port->info, 0, IB_PORT_LINK_SPEED_SUPPORTED_F), fdr10, extSpeed);
 }
 
 std::shared_ptr<IBPort> IBPort::make_port(std::shared_ptr<IBHost> myHost, ibnd_port_t* port, std::shared_ptr<IBPortRegistry> registry) {
@@ -36,32 +53,40 @@ std::shared_ptr<IBPort> IBPort::make_port(std::shared_ptr<IBHost> myHost, ibnd_p
     return retval;
 }
 
-IBPort::LinkSpeed IBPort::getLinkSpeedFromInt(const uint32_t lsInt) const {
-    switch (lsInt) {
-        case 1:
-            return SDR;
-        case 2:
-            return DDR;
-        case 4:
-            return QDR;
-        default:
-            throw "Unknown link speed!";
+IBPort::LinkSpeed IBPort::getMaxLinkSpeedFromInt(const uint32_t lsInt, const uint32_t fdr10, const uint32_t eSpeed) const {
+    if (eSpeed & 2) {
+        return EDR;
+    } else if (eSpeed & 1) {
+        return FDR;
+    } else if (eSpeed == 0) {
+        if (fdr10 && FDR10)
+            return FDR1;
+        else {
+            if (lsInt & 4) {
+                return QDR;
+            } else if (lsInt & 2) {
+                return DDR;
+            } else if (lsInt & 1) {
+                return SDR;
+            } else {
+                throw "Unknown link speed!";
+            }
+        }
+    } else {
+        throw "Unknown link speed!";
     }
 }
 
-IBPort::LinkWidth IBPort::getLinkWidthFromInt(const uint32_t lwInt) const {
-    switch (lwInt) {
-        case 1:
-            return LW_1;
-        case 2:
-            return LW_4;
-        case 4:
-            return LW_8;
-        case 8:
-            return LW_12;
-        default:
-            throw "Unknown link width!";
-    }
+IBPort::LinkWidth IBPort::getLinkMaxWidthFromInt(const uint32_t lwInt) const {
+    if (lwInt & 8)
+        return LW_12;
+    else if (lwInt & 4)
+        return LW_8;
+    else if (lwInt & 2)
+        return LW_4;
+    else if (lwInt & 1)
+        return LW_1;
+    throw "Unknown link width!";
 }
 
 IBPort::PHYSPortState IBPort::getPHYSPortStateFromInt(const uint32_t ppsInt) const {
@@ -78,46 +103,6 @@ IBPort::LogPortState IBPort::getLogPortStateFromInt(const uint32_t lpsInt) const
         throw "Unknown logical port state";
 }
 
-IBPort::LinkSpeed IBPort::getMaxLinkSpeedEnabled() const {
-    if (linkSpeedEnabled & QDR)
-        return QDR;
-    else if (linkSpeedEnabled & DDR)
-        return DDR;
-    else
-        return SDR;
-}
-
-IBPort::LinkSpeed IBPort::getMaxLinkSpeedSupported() const {
-    if (linkSpeedSupported & QDR)
-        return QDR;
-    else if (linkSpeedSupported & DDR)
-        return DDR;
-    else
-        return SDR;
-}
-
-IBPort::LinkWidth IBPort::getMaxLinkWidthEnabled() const {
-    if (linkWidthEnabled & LW_12)
-        return LW_12;
-    else if (linkWidthEnabled & LW_8)
-        return LW_8;
-    else if (linkWidthEnabled & LW_4)
-        return LW_4;
-    else
-        return LW_1;
-}
-
-IBPort::LinkWidth IBPort::getMaxLinkWidthSupported() const {
-    if (linkWidthSupported & LW_12)
-        return LW_12;
-    else if (linkWidthSupported & LW_8)
-        return LW_8;
-    else if (linkWidthSupported & LW_4)
-        return LW_4;
-    else
-        return LW_1;
-}
-
 std::ostream& operator<<(std::ostream& stream, const IBPort* port) {
     stream << "Port GUID " << std::hex << port->getGuid() << std::dec << ", port number " << port->getPortNum() << std::endl
             << "\t Link:" << std::endl
@@ -125,8 +110,8 @@ std::ostream& operator<<(std::ostream& stream, const IBPort* port) {
             << " out of " << port->getMaxLinkWidthSupported()
             << "(" << port->getMaxLinkWidthEnabled() << " enabled)" << std::endl
             << "\t\tRate " << port->getLinkSpeedActive()
-            << " out of " << port->getMaxLinkSpeedSupported()
-            << "(" << port->getMaxLinkSpeedEnabled() << " enabled)";
+            << " out of " << port->getLinkSpeedSupported()
+            << "(" << port->getLinkSpeedEnabled() << " enabled)";
 
     stream << std::endl
             << "\t\tPhysical link state: " << port->getStatePhysical() << std::endl

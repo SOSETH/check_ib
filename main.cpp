@@ -17,15 +17,19 @@ int main() {
     }
 
     ibnd_node_t* node = fabric->nodes;
-    std::list<std::shared_ptr<IBHost>> hosts;
-    auto reg = std::make_shared<IBPortRegistry>();
-    while (node) {
-        hosts.push_back(IBHost::make_host(node, reg));
-        node = node->next;
-    }
+    try {
+        std::list<std::shared_ptr<IBHost>> hosts;
+        auto reg = std::make_shared<IBPortRegistry>();
+        while (node) {
+            hosts.push_back(IBHost::make_host(node, reg));
+            node = node->next;
+        }
 
-    for (auto iterator = hosts.begin(); iterator != hosts.end(); iterator++) {
-        std::cout << (*iterator) << std::endl;
+        for (auto iterator = hosts.begin(); iterator != hosts.end(); iterator++) {
+            std::cout << (*iterator) << std::endl;
+        }
+    } catch (const char *err) {
+        std::cerr << "Caught error in main(): " << err << std::endl;
     }
 
     ibnd_destroy_fabric(fabric);
