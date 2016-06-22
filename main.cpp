@@ -16,12 +16,17 @@ int main() {
         return -1;
     }
 
+    int mgmt_classes[4] = { IB_SMI_CLASS, IB_SMI_DIRECT_CLASS, IB_SA_CLASS,
+                            IB_PERFORMANCE_CLASS
+    };
+    struct ibmad_port *ibmad_port = mad_rpc_open_port(NULL, 0, mgmt_classes, 4);
+
     ibnd_node_t* node = fabric->nodes;
     try {
         std::list<std::shared_ptr<IBHost>> hosts;
         auto reg = std::make_shared<IBPortRegistry>();
         while (node) {
-            hosts.push_back(IBHost::make_host(node, reg));
+            hosts.push_back(IBHost::make_host(node, reg, ibmad_port));
             node = node->next;
         }
 
@@ -32,6 +37,7 @@ int main() {
         std::cerr << "Caught error in main(): " << err << std::endl;
     }
 
+    mad_rpc_close_port(ibmad_port);
     ibnd_destroy_fabric(fabric);
 
     return 0;

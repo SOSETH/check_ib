@@ -14,7 +14,7 @@ class IBPort;
 
 class IBHost : public std::enable_shared_from_this<IBHost>{
 public:
-    static std::shared_ptr<IBHost> make_host(ibnd_node_t*, std::shared_ptr<IBPortRegistry>);
+    static std::shared_ptr<IBHost> make_host(ibnd_node_t*, std::shared_ptr<IBPortRegistry>, struct ibmad_port *ibmad_port);
 
     unsigned int getNumPorts() const {
         return numPorts;

@@ -13,13 +13,13 @@ IBHost::IBHost(std::shared_ptr<IBPortRegistry> myRegistry) : registry(myRegistry
     numPorts = 0;
 }
 
-std::shared_ptr<IBHost> IBHost::make_host(ibnd_node_t *host, std::shared_ptr<IBPortRegistry> myRegistry)  {
+std::shared_ptr<IBHost> IBHost::make_host(ibnd_node_t *host, std::shared_ptr<IBPortRegistry> myRegistry, struct ibmad_port *ibmad_port)  {
     std::shared_ptr<IBHost> retval(new IBHost(myRegistry));
     retval->guid =  mad_get_field(host->info, 0, IB_NODE_SYSTEM_GUID_F);
     retval->numPorts = static_cast<unsigned int>(host->numports);
     for (int i = 0; i <= retval->numPorts; i++) {
         if (host->ports[i]) {
-            retval->ports.push_back(IBPort::make_port(retval, host->ports[i], retval->registry));
+            retval->ports.push_back(IBPort::make_port(retval, host->ports[i], retval->registry, ibmad_port));
         }
     }
     return retval;
