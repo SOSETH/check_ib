@@ -17,3 +17,39 @@ nodes:
     name: sw-ib-voltaire
   - guid: 0x000b8cffff005128
     name: sw-ib-mellanox
+links:
+  - from: mon.sos.ethz.ch
+    to: sw-ib-voltaire
+  - from: mon.sos.ethz.ch
+    to: comp-1.sos.ethz.ch
+  - from: comp-1.sos.ethz.ch
+    to: sw-ib-voltaire
+  - from: comp-1.sos.ethz.ch
+    to: sw-ib-mellanox
+  - from: comp-2.sos.ethz.ch
+    to: sw-ib-voltaire
+  - from: comp-2.sos.ethz.ch
+    to: sw-ib-mellanox
+  - from: comp-3.sos.ethz.ch
+    to: sw-ib-voltaire
+  - from: comp-3.sos.ethz.ch
+    to: sw-ib-mellanox
+  - from: ceph-a.sos.ethz.ch
+    to: sw-ib-voltaire
+  - from: ceph-a.sos.ethz.ch
+    to: sw-ib-mellanox
+  - from: ceph-b.sos.ethz.ch
+    to: sw-ib-voltaire
+  - from: ceph-b.sos.ethz.ch
+    to: sw-ib-mellanox
+  - from: ceph-c.sos.ethz.ch
+    to: sw-ib-voltaire
+  - from: ceph-c.sos.ethz.ch
+    to: sw-ib-mellanox
+  - from: sw-ib-voltaire
+    to: sw-ib-mellanox
+  - from: sw-ib-voltaire
+    to: sw-ib-mellanox
+config:
+  - name: resetCounters
+    value: False
