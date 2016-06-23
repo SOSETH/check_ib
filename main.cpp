@@ -4,6 +4,7 @@
 #include <infiniband/ibnetdisc.h>
 #include <memory>
 #include "IBHost.h"
+#include "IBNetfileParser.h"
 
 int main() {
     struct ibnd_config config = { 0 };
@@ -20,21 +21,26 @@ int main() {
                             IB_PERFORMANCE_CLASS
     };
     struct ibmad_port *ibmad_port = mad_rpc_open_port(NULL, 0, mgmt_classes, 4);
+    std::shared_ptr<IBNetfileParser> parser(new IBNetfileParser("testfile.yml"));
 
     ibnd_node_t* node = fabric->nodes;
     try {
         std::list<std::shared_ptr<IBHost>> hosts;
         auto reg = std::make_shared<IBPortRegistry>();
         while (node) {
-            hosts.push_back(IBHost::make_host(node, reg, ibmad_port));
+            hosts.push_back(IBHost::make_host(node, reg, ibmad_port, parser));
             node = node->next;
         }
+
+        reg->isMissingSomething(true);
 
         for (auto iterator = hosts.begin(); iterator != hosts.end(); iterator++) {
             std::cout << (*iterator) << std::endl;
         }
     } catch (const char *err) {
         std::cerr << "Caught error in main(): " << err << std::endl;
+    } catch (std::exception & exception) {
+        std::cerr << "Caught error in main(): " << exception.what() << std::endl;
     }
 
     mad_rpc_close_port(ibmad_port);

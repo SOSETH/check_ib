@@ -4,12 +4,24 @@
 
 #include <map>
 #include <iostream>
+#include <sstream>
 #include "IBPortRegistry.h"
 #include "IBPort.h"
 
 #define TIMEOUT 100
 
-IBPort::IBPort(std::shared_ptr<IBHost> myHost, ibnd_port_t* port, struct ibmad_port *ibmad_port) : host(myHost) {
+const char* IBPort::IBPortException::what() const noexcept {
+    std::ostringstream str;
+    str << "Error while processing port " << std::hex << guid << ": ";
+    str << IBException::what();
+    std::string what = str.str();
+    char *buf = new char[what.length()];
+    what.copy(buf, what.length());
+    return buf;
+}
+
+IBPort::IBPort(std::shared_ptr<IBHost> myHost, ibnd_port_t* port, struct ibmad_port *ibmad_port) throw(IBPortException)
+        : host(myHost)  {
     unsigned int capMask = mad_get_field(port->info, 0, IB_PORT_CAPMASK_F);
     linkWidthEnabled = mad_get_field(port->info, 0, IB_PORT_LINK_WIDTH_ENABLED_F);
     linkWidthActive = getLinkMaxWidthFromInt(mad_get_field(port->info, 0, IB_PORT_LINK_WIDTH_ACTIVE_F));
@@ -17,6 +29,10 @@ IBPort::IBPort(std::shared_ptr<IBHost> myHost, ibnd_port_t* port, struct ibmad_p
     stateLogical = getLogPortStateFromInt(mad_get_field(port->info, 0, IB_PORT_STATE_F));
     statePhysical = getPHYSPortStateFromInt(mad_get_field(port->info, 0, IB_PORT_PHYS_STATE_F));
     guid = port->guid;
+    if (port->node->type == IB_NODE_SWITCH)
+        lid = port->node->smalid;
+    else
+        lid = port->base_lid;
     portNum = static_cast<unsigned int>(port->portnum);
 
     unsigned int extSpeed = 0, fdr10 = 0;
@@ -26,22 +42,25 @@ IBPort::IBPort(std::shared_ptr<IBHost> myHost, ibnd_port_t* port, struct ibmad_p
         // ...expect for Mellanox, who do something special...
         fdr10 = mad_get_field(port->ext_info, 0, IB_MLNX_EXT_PORT_LINK_SPEED_ACTIVE_F);
     }
-    linkSpeedActive = getMaxLinkSpeedFromInt(mad_get_field(port->info, 0, IB_PORT_LINK_SPEED_ACTIVE_F), fdr10, extSpeed);
+    linkSpeedActive = getMaxLinkSpeedFromInt(mad_get_field(port->info, 0, IB_PORT_LINK_SPEED_ACTIVE_F),
+                                             fdr10, extSpeed);
     if (capMask & IB_PORT_CAP_HAS_EXT_SPEEDS) {
         extSpeed = mad_get_field(port->ext_info, 0, IB_PORT_LINK_SPEED_EXT_ENABLED_F);
         fdr10 = mad_get_field(port->ext_info, 0, IB_MLNX_EXT_PORT_LINK_SPEED_ENABLED_F);
     }
-    linkSpeedEnabled = getMaxLinkSpeedFromInt(mad_get_field(port->info, 0, IB_PORT_LINK_SPEED_ENABLED_F), fdr10, extSpeed);
+    linkSpeedEnabled = getMaxLinkSpeedFromInt(mad_get_field(port->info, 0, IB_PORT_LINK_SPEED_ENABLED_F),
+                                              fdr10, extSpeed);
     if (capMask & IB_PORT_CAP_HAS_EXT_SPEEDS) {
         extSpeed = mad_get_field(port->ext_info, 0, IB_PORT_LINK_SPEED_EXT_SUPPORTED_F);
         fdr10 = mad_get_field(port->ext_info, 0, IB_MLNX_EXT_PORT_LINK_SPEED_SUPPORTED_F);
     }
-    linkSpeedSupported = getMaxLinkSpeedFromInt(mad_get_field(port->info, 0, IB_PORT_LINK_SPEED_SUPPORTED_F), fdr10, extSpeed);
+    linkSpeedSupported = getMaxLinkSpeedFromInt(mad_get_field(port->info, 0, IB_PORT_LINK_SPEED_SUPPORTED_F),
+                                                fdr10, extSpeed);
 
     queryPort(port, ibmad_port);
 }
 
-void IBPort::queryPort(ibnd_port_t *port, struct ibmad_port *srcport) {
+void IBPort::queryPort(ibnd_port_t *port, struct ibmad_port *srcport) throw(IBPortException) {
     // Infiniband spec, section 13.4.2, C13-3: The data payload (...) for all MADs shall be exactly 256 bytes.
     // The buffers in ibqueryerrors are 1k however...
     const std::unique_ptr<uint8_t[]> buf(new uint8_t[1024]);
@@ -54,40 +73,86 @@ void IBPort::queryPort(ibnd_port_t *port, struct ibmad_port *srcport) {
         ib_portid_set(&portID, port->base_lid, 0, 0);
 
     if (!portID.lid)
-        throw "Coudln't get PortID";
+        throw IBPortException(guid, "Coudln't get PortID");
 
     uint16_t capMask = 0;
     if (!pma_query_via(buf.get(), &portID, port->portnum, TIMEOUT, CLASS_PORT_INFO, srcport))
-        throw "Couldn't query capabilities";
+        throw IBPortException(guid, "Couldn't query capabilities");
 
-
-    if (!pma_query_via(buf.get(), &portID, port->portnum, TIMEOUT, IB_GSI_PORT_COUNTERS, srcport))
-        return;
+    if (!pma_query_via(buf.get(), &portID, port->portnum, TIMEOUT, IB_GSI_PORT_COUNTERS, srcport)) {
+        if (port->portnum == 0 && port->node->type == IB_NODE_SWITCH)
+            return;
+        else
+            throw IBPortException(guid, "Couldn't query port counters");
+    }
 
     if (capMask & (IB_PM_EXT_WIDTH_SUPPORTED | IB_PM_EXT_WIDTH_NOIETF_SUP)) {
         // We need "extended" counters
         if (!pma_query_via(bufExtended.get(), &portID, port->portnum, TIMEOUT, IB_GSI_PORT_COUNTERS_EXT, srcport))
-            throw "Couldn't query extended port counters";
+            throw IBPortException(guid, "Couldn't query extended port counters");
     } else {
         bufExtended.reset(nullptr);
     }
 
     for (int i = 0; i < numAttrs; i++) {
-        values[attributeList[i].key] = attributeList[i].fun(attributeList[i].value, attributeList[i].value, buf.get(), buf.get());
+        values[attributeList[i].key] = attributeList[i].fun(attributeList[i].value, attributeList[i].value,
+                                                            buf.get(), buf.get());
     }
 
     for (int i = 0; i < numCount; i++) {
-        values[counterList[i].key] = counterList[i].fun(counterList[i].valueA, counterList[i].valueB, buf.get(), bufExtended.get());
+        values[counterList[i].key] = counterList[i].fun(counterList[i].valueA, counterList[i].valueB,
+                                                        buf.get(), bufExtended.get());
     }
 }
 
-uint32_t getUIntField(MAD_FIELDS fieldA, MAD_FIELDS fieldB, uint8_t *bufA, uint8_t *bufB){
+void IBPort::resetCounters(ibnd_port_t* port, struct ibmad_port *srcport) throw(IBPortException) {
+    const std::unique_ptr<uint8_t[]> rcvbuf(new uint8_t[1024]);
+
+    ib_portid_t portID = {0};
+    if (port->node->type == IB_NODE_SWITCH)
+        ib_portid_set(&portID, port->node->smalid, 0, 0);
+    else
+        ib_portid_set(&portID, port->base_lid, 0, 0);
+
+    if (!portID.lid)
+        throw IBPortException(guid, "Coudln't get PortID");
+
+    uint16_t capMask = 0;
+    if (!pma_query_via(rcvbuf.get(), &portID, port->portnum, TIMEOUT, CLASS_PORT_INFO, srcport))
+        throw IBPortException(guid, "Couldn't query capabilities");
+
+    if (!performance_reset_via(rcvbuf.get(), &portID, port->portnum, static_cast<unsigned int>(~0), TIMEOUT,
+                               IB_GSI_PORT_COUNTERS, srcport))
+        throw IBPortException(guid, "Couldn't reset base performance counters of port");
+
+    if ( capMask & (IB_PM_EXT_WIDTH_SUPPORTED | IB_PM_EXT_WIDTH_NOIETF_SUP)) {
+        // Clear extended metrics
+        ib_rpc_t rpc = { 0 };
+        rpc.mgtclass = IB_PERFORMANCE_CLASS;
+        rpc.method = IB_MAD_METHOD_SET;
+        rpc.attr.id = IB_GSI_PORT_COUNTERS_EXT;
+        mad_set_field(rcvbuf.get(), 0, IB_PC_EXT_PORT_SELECT_F, static_cast<uint32_t>(port->portnum));
+        mad_set_field(rcvbuf.get(), 0, IB_PC_EXT_COUNTER_SELECT_F, static_cast<unsigned int>(~0));
+        rpc.attr.mod = 0;
+        rpc.timeout = TIMEOUT;
+        rpc.datasz = IB_PC_DATA_SZ;
+        rpc.dataoffs = IB_PC_DATA_OFFS;
+        if (!mad_rpc(srcport, &rpc, &portID, rcvbuf.get(), rcvbuf.get()))
+            throw IBPortException(guid, "Couldn't reset extended performance counters of port");
+    }
+}
+
+uint64_t IBPort::operator[](const IBPort::PortAttribute attr) {
+    return values[attr];
+}
+
+uint32_t getUIntField(MAD_FIELDS fieldA, MAD_FIELDS, uint8_t *bufA, uint8_t*) {
     uint32_t value;
     mad_decode_field(bufA, fieldA, &value);
     return value;
 }
 
-uint32_t getUIntFieldExt(MAD_FIELDS fieldA, MAD_FIELDS fieldB, uint8_t *bufA, uint8_t *bufB){
+uint32_t getUIntFieldExt(MAD_FIELDS fieldA, MAD_FIELDS fieldB, uint8_t *bufA, uint8_t *bufB) {
     uint32_t value;
     if (bufB)
         mad_decode_field(bufB, fieldB, &value);
@@ -96,19 +161,23 @@ uint32_t getUIntFieldExt(MAD_FIELDS fieldA, MAD_FIELDS fieldB, uint8_t *bufA, ui
     return value;
 }
 
-std::shared_ptr<IBPort> IBPort::make_port(std::shared_ptr<IBHost> myHost, ibnd_port_t* port, std::shared_ptr<IBPortRegistry> registry, struct ibmad_port *ibmad_port) {
+std::shared_ptr<IBPort> IBPort::make_port(std::shared_ptr<IBHost> myHost, ibnd_port_t* port,
+                                          std::shared_ptr<IBPortRegistry> registry,
+                                          struct ibmad_port *ibmad_port) throw(IBPortException) {
     std::shared_ptr<IBPort> retval(new IBPort(myHost, port, ibmad_port));
     if (port->remoteport) {
-        if (registry->hasPortWithGUID(port->remoteport->guid))
-            retval->peer = registry->getPortWithGUID(port->remoteport->guid);
+        retval->peerAddress.reset(new IBAddress(port->remoteport));
+        if (registry->hasPortWithAddress(*retval->peerAddress))
+            retval->peer = registry->getPortWithAddress(*retval->peerAddress);
         else
-            registry->registerInterestFor(port->remoteport->guid, retval);
+            registry->registerInterestFor(*retval->peerAddress, retval);
     }
     registry->registerPort(retval);
     return retval;
 }
 
-IBPort::LinkSpeed IBPort::getMaxLinkSpeedFromInt(const uint32_t lsInt, const uint32_t fdr10, const uint32_t eSpeed) const {
+IBPort::LinkSpeed IBPort::getMaxLinkSpeedFromInt(const uint32_t lsInt, const uint32_t fdr10,
+                                                 const uint32_t eSpeed) const throw(IBPortException) {
     if (eSpeed & 2) {
         return EDR;
     } else if (eSpeed & 1) {
@@ -124,15 +193,15 @@ IBPort::LinkSpeed IBPort::getMaxLinkSpeedFromInt(const uint32_t lsInt, const uin
             } else if (lsInt & 1) {
                 return SDR;
             } else {
-                throw "Unknown link speed!";
+                throw IBPortException(guid, "Unknown link speed!");
             }
         }
     } else {
-        throw "Unknown link speed!";
+        throw IBPortException(guid, "Unknown link speed!");
     }
 }
 
-IBPort::LinkWidth IBPort::getLinkMaxWidthFromInt(const uint32_t lwInt) const {
+IBPort::LinkWidth IBPort::getLinkMaxWidthFromInt(const uint32_t lwInt) const throw(IBPortException) {
     if (lwInt & 8)
         return LW_12;
     else if (lwInt & 4)
@@ -141,25 +210,26 @@ IBPort::LinkWidth IBPort::getLinkMaxWidthFromInt(const uint32_t lwInt) const {
         return LW_4;
     else if (lwInt & 1)
         return LW_1;
-    throw "Unknown link width!";
+    throw IBPortException(guid, "Unknown link width!");
 }
 
-IBPort::PHYSPortState IBPort::getPHYSPortStateFromInt(const uint32_t ppsInt) const {
+IBPort::PHYSPortState IBPort::getPHYSPortStateFromInt(const uint32_t ppsInt) const throw(IBPortException) {
     if (ppsInt <= 7)
         return static_cast<PHYSPortState>(ppsInt);
     else
-        throw "Unknown physical port state";
+        throw IBPortException(guid, "Unknown physical port state");
 }
 
-IBPort::LogPortState IBPort::getLogPortStateFromInt(const uint32_t lpsInt) const {
+IBPort::LogPortState IBPort::getLogPortStateFromInt(const uint32_t lpsInt) const throw(IBPortException) {
     if (lpsInt <= 4)
         return static_cast<LogPortState>(lpsInt);
     else
-        throw "Unknown logical port state";
+        throw IBPortException(guid, "Unknown logical port state");
 }
 
 std::ostream& operator<<(std::ostream& stream, const IBPort* port) {
-    stream << "Port GUID " << std::hex << port->getGuid() << std::dec << ", port number " << port->getPortNum() << std::endl
+    stream << "Port GUID " << std::hex << port->getGuid() << std::dec << " LID " << port->getLid()
+            << ", port number " << port->getPortNum() << std::endl
             << "\t Link:" << std::endl
             << "\t\tWidth " << port->getLinkWidthActive()
             << " out of " << port->getMaxLinkWidthSupported()
@@ -182,7 +252,9 @@ std::ostream& operator<<(std::ostream& stream, const IBPort* port) {
                 << "\t\t GUID: " << std::hex << peer->getGuid() << std::dec << std::endl;
 
         if (auto peerHost = peer->getHost().lock())
-            stream << "\t\t Host: " << std::hex << peerHost->getGUID() << std::dec << std::endl;
+            stream << "\t\t Host: " << peerHost->getName() << std::endl;
+    } else if (port->hasPeerAddr()){
+        stream << "\t Peer port is not available, it would be: " << port->getPeerAddr() << std::endl;
     }
 
     return stream;

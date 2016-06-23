@@ -8,19 +8,21 @@
 #include <map>
 #include <list>
 #include <memory>
+#include "IBAddress.h"
 
 class IBPort;
 
 class IBPortRegistry {
 public:
     void registerPort(std::shared_ptr<IBPort>);
-    std::shared_ptr<IBPort> getPortWithGUID(const uint64_t);
-    bool hasPortWithGUID(const uint64_t) const;
-    void registerInterestFor(uint64_t guid, std::shared_ptr<IBPort>);
+    std::shared_ptr<IBPort> getPortWithAddress(const IBAddress);
+    bool hasPortWithAddress(const IBAddress) const;
+    void registerInterestFor(IBAddress guid, std::shared_ptr<IBPort>);
+    bool isMissingSomething(const bool printOnErr) const;
 
 protected:
-    std::map<uint64_t, std::shared_ptr<IBPort>> portRegistry;
-    std::map<uint64_t, std::list<std::shared_ptr<IBPort>>> interestRegistry;
+    std::map<IBAddress, std::shared_ptr<IBPort>> portRegistry;
+    std::map<IBAddress, std::shared_ptr<IBPort>> interestRegistry;
 };
 
 

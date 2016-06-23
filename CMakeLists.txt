@@ -15,9 +15,9 @@ endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-set(SOURCE_FILES main.cpp IBHost.cpp IBHost.h IBPort.cpp IBPort.h IBPortRegistry.cpp IBPortRegistry.cpp IBPortRegistry.h)
+set(SOURCE_FILES main.cpp IBHost.cpp IBHost.h IBPort.cpp IBPort.h IBPortRegistry.cpp IBPortRegistry.cpp IBPortRegistry.h IBException.h IBNetfileParser.cpp IBNetfileParser.h IBAddress.cpp IBAddress.h)
 
 include_directories(/usr/include/infiniband)
 
 add_executable(check_ib ${SOURCE_FILES})
-target_link_libraries(check_ib ibnetdisc ibmad)
+target_link_libraries(check_ib ibnetdisc ibmad yaml-cpp)
