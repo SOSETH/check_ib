@@ -10,6 +10,9 @@
 
 #define TIMEOUT 100
 
+// Badabadabadabadabaabaabaa
+std::map<IBPort::PortAttribute, std::string> IBPort::attributeDesc;
+
 const char* IBPort::IBPortException::what() const noexcept {
     std::ostringstream str;
     str << "Error while processing port " << std::hex << guid << ": ";
@@ -58,6 +61,24 @@ IBPort::IBPort(std::shared_ptr<IBHost> myHost, ibnd_port_t* port, struct ibmad_p
                                                 fdr10, extSpeed);
 
     queryPort(port, ibmad_port);
+
+    // Static initialization:
+    if (attributeDesc.size() == 0) {
+        attributeDesc[SYMBOL_ERRORS] = "symbol errors";
+        attributeDesc[LINK_ERRS_RECOVERED] = "recovered link errors";
+        attributeDesc[LINK_DOWN_COUNT] = "unrecovered link errors";
+        attributeDesc[PORT_RX_ERRS] = "RX packets with error";
+        attributeDesc[PORT_TX_DISCARDED] = "TX packets discarded";
+        attributeDesc[PORT_TX_CONSTR_ERRS] = "invalid TX packet constraints";
+        attributeDesc[PORT_RX_CONSTR_ERRS] = "invalid RX packet constraints";
+        attributeDesc[LOCAL_LINK_INTEGR_ERRS] = "local link integrity errors";
+        attributeDesc[EXCESSIVE_BUFFER_OVERRUNS] = "buffer overruns";
+        attributeDesc[RX_BYTES] = "RX (bytes)";
+        attributeDesc[TX_BYTES] = "TX (bytes)";
+        attributeDesc[RX_PACKETS] = "RX (packets)";
+        attributeDesc[TX_PACKETS] = "TX (packets)";
+        attributeDesc[TX_WAIT_TIME] = "average transmit wait time";
+    }
 }
 
 void IBPort::queryPort(ibnd_port_t *port, struct ibmad_port *srcport) throw(IBPortException) {

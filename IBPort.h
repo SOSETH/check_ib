@@ -221,6 +221,14 @@ private:
             {RX_PACKETS, IB_PC_RCV_PKTS_F, IB_PC_EXT_RCV_PKTS_F, &getUIntFieldExt},
             {TX_WAIT_TIME, IB_PC_XMT_WAIT_F, IB_PC_XMT_WAIT_F, &getUIntField}
     };
+
+private:
+    static std::map<IBPort::PortAttribute, std::string> attributeDesc;
+
+public:
+    static std::map<IBPort::PortAttribute, std::string> getAttributeDescriptions() {
+        return attributeDesc;
+    }
 };
 
 std::ostream& operator<<(std::ostream&, const IBPort::PHYSPortState);

@@ -14,6 +14,7 @@ IBHostValidator::IBHostValidator(const std::string&& hostname) : myHostName(host
 
 bool IBHostValidator::isValid(std::shared_ptr<IBHostRegistry> registry, std::shared_ptr<IBNetfileParser> parser,
                               std::shared_ptr<IcingaOutput> output) {
+    bool isOK=true;
     if (!registry->has(myHostName)) {
         output->failCritical("Coudln't find host to check!");
         return false;
@@ -24,12 +25,20 @@ bool IBHostValidator::isValid(std::shared_ptr<IBHostRegistry> registry, std::sha
     auto expectedLinks = parser->getExpectedLinks();
     for (auto link = expectedLinks.begin(); link != expectedLinks.end(); link++) {
         if (link->first == me) {
-            if (!hasLinkTo(me, link->second))
-                output->failCritical("Missing expected link!");
+            if (!hasLinkTo(me, link->second)) {
+                isOK = false;
+                output->failWarning("Missing expected link!");
+            }
         } else if (link->second == me) {
-            if (!hasLinkTo(link->second, me))
-                output->failCritical("Missing expected link!");
+            if (!hasLinkTo(link->second, me)) {
+                isOK = false;
+                output->failWarning("Missing expected link!");
+            }
         }
     }
-    return true;
+
+    output->printPerformanceData(me);
+    output->finish();
+    return isOK;
 }
+

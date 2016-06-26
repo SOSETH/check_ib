@@ -20,15 +20,21 @@ public:
     };
 
     void failCritical(std::string&& reason);
+    void failWarning(std::string&& reason);
+    void failUnknown(std::string&& reason);
     void setIBHostDetail(std::shared_ptr<IBHost>);
+    void finish();
     IcingaOutput();
     const int getRC() const {
         return rc;
     }
+    void printPerformanceData(std::shared_ptr<IBHost>);
 
 private:
     std::function<void()> dumpFun;
     int rc;
+    bool isFirstPerformanceMetric = true;
+    bool didFinish = false;
 };
 
 
