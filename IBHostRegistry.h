@@ -21,6 +21,9 @@ public:
     std::shared_ptr<IBHost> operator[](const std::string&);
     std::shared_ptr<IBHost> operator[](const std::string&&);
     bool has(const std::string&) const;
+    const std::map<std::string, std::shared_ptr<IBHost>> & getAllByName() const {
+        return hostByName;
+    };
 };
 
 

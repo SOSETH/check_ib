@@ -14,7 +14,7 @@ class IcingaOutput;
 class IBValidator {
 public:
     IBValidator(std::shared_ptr<IBNetfileParser> parser, std::shared_ptr<IcingaOutput> output);
-    virtual bool isValid(std::shared_ptr<IBHostRegistry>) = 0;
+    virtual bool isValid() throw(IBException) = 0;
     const bool hasLinkTo(const std::shared_ptr<IBHost>, const std::shared_ptr<IBHost>) const;
 
 protected:

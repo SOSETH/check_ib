@@ -29,6 +29,9 @@ public:
         return rc;
     }
     void printPerformanceData(std::shared_ptr<IBHost>);
+    const bool getDidFinish() const {
+        return didFinish;
+    }
 
 private:
     std::function<void()> dumpFun;
