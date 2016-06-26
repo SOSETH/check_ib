@@ -40,12 +40,17 @@ void IcingaOutput::finish() {
     std::cout << std::endl;
     if (didFinish)
         return;
-    if (dumpFun)
+    if (rc != 0 && dumpFun)
         dumpFun();
     didFinish = true;
 }
 
 void IcingaOutput::printPerformanceData(std::shared_ptr<IBHost> host) {
+    if (rc == -1) {
+        rc = 0;
+        std::cout << "OK";
+    }
+    
     auto ports = host->getPorts();
     auto description = IBPort::getAttributeDescriptions();
     for (auto port = ports.begin(); port != ports.end(); port++) {

@@ -21,7 +21,7 @@ links:
   - from: mon.sos.ethz.ch
     to: sw-ib-voltaire
   - from: mon.sos.ethz.ch
-    to: comp-1.sos.ethz.ch
+    to: sw-ib-mellanox
   - from: comp-1.sos.ethz.ch
     to: sw-ib-voltaire
   - from: comp-1.sos.ethz.ch
