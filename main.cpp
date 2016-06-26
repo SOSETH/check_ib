@@ -31,13 +31,14 @@ int main(int argc, const char* const* argv) {
     desc.add_options()
         ("help", "print this message")
         ("check-host", po::value<std::string>(), "check IB connectivity of a given host")
+        ("clear", "clear performance counters after read (recommended)")
         ("dump", "dump all detected information about the network")
     ;
-    po::variables_map options;
-    po::store(po::parse_command_line(argc, argv, desc), options);
-    po::notify(options);
+    std::shared_ptr<po::variables_map> options(new po::variables_map());
+    po::store(po::parse_command_line(argc, argv, desc), *options);
+    po::notify(*options);
 
-    if (options.count("help")) {
+    if (options->count("help")) {
         std::cout << desc << std::endl;
         return 0;
     }
@@ -66,11 +67,11 @@ int main(int argc, const char* const* argv) {
     try {
         std::list<std::shared_ptr<IBHost>> hosts;
         while (node) {
-            hosts.push_back(IBHost::make_host(node, reg, ibmad_port, parser, hostRegistry));
+            hosts.push_back(IBHost::make_host(node, reg, ibmad_port, parser, hostRegistry, options));
             node = node->next;
         }
 
-        if (options.count("dump")) {
+        if (options->count("dump")) {
             reg->isMissingSomething(true);
 
             for (auto iterator = hosts.begin(); iterator != hosts.end(); iterator++) {
@@ -81,12 +82,12 @@ int main(int argc, const char* const* argv) {
         parser->finishParsing(hostRegistry, true);
         IBValidator* validator = nullptr;
 
-        if (options.count("check-host")) {
-            validator = new IBHostValidator(options["check-host"].as<std::string>());
+        if (options->count("check-host")) {
+            validator = new IBHostValidator((*options)["check-host"].as<std::string>(), parser, output);
         }
 
         if (validator) {
-            validator->isValid(hostRegistry, parser, output);
+            validator->isValid(hostRegistry);
             delete validator;
         }
     } catch (const char *err) {

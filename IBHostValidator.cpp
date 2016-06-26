@@ -9,11 +9,14 @@
 #include "IBPort.h"
 #include "IcingaOutput.h"
 
-IBHostValidator::IBHostValidator(const std::string& hostname) : myHostName(hostname) {}
-IBHostValidator::IBHostValidator(const std::string&& hostname) : myHostName(hostname) {}
+IBHostValidator::IBHostValidator(const std::string& hostname, std::shared_ptr<IBNetfileParser> parser,
+                                 std::shared_ptr<IcingaOutput> output) :
+        IBValidator(parser, output), myHostName(hostname) {}
+IBHostValidator::IBHostValidator(const std::string&& hostname, std::shared_ptr<IBNetfileParser> parser,
+                                 std::shared_ptr<IcingaOutput> output) :
+        IBValidator(parser, output), myHostName(hostname) {}
 
-bool IBHostValidator::isValid(std::shared_ptr<IBHostRegistry> registry, std::shared_ptr<IBNetfileParser> parser,
-                              std::shared_ptr<IcingaOutput> output) {
+bool IBHostValidator::isValid(std::shared_ptr<IBHostRegistry> registry) {
     bool isOK=true;
     if (!registry->has(myHostName)) {
         output->failCritical("Coudln't find host to check!");
@@ -39,6 +42,7 @@ bool IBHostValidator::isValid(std::shared_ptr<IBHostRegistry> registry, std::sha
 
     output->printPerformanceData(me);
     output->finish();
+
     return isOK;
 }
 

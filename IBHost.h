@@ -9,17 +9,19 @@
 #include <ibnetdisc.h>
 #include <memory>
 #include <string>
+#include <boost/program_options.hpp>
 #include "IBPortRegistry.h"
 #include "IBNetfileParser.h"
 
 class IBPort;
 class IBHostRegistry;
 
-class IBHost : public std::enable_shared_from_this<IBHost>{
+class IBHost {
 public:
     static std::shared_ptr<IBHost> make_host(ibnd_node_t*, std::shared_ptr<IBPortRegistry>,
                                              struct ibmad_port *ibmad_port, std::shared_ptr<IBNetfileParser> nf,
-                                             std::shared_ptr<IBHostRegistry> hostRegistry);
+                                             std::shared_ptr<IBHostRegistry> hostRegistry,
+                                             std::shared_ptr<boost::program_options::variables_map> options);
 
     unsigned int getNumPorts() const {
         return numPorts;

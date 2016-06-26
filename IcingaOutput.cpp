@@ -50,7 +50,7 @@ void IcingaOutput::printPerformanceData(std::shared_ptr<IBHost> host) {
         rc = 0;
         std::cout << "OK";
     }
-    
+
     auto ports = host->getPorts();
     auto description = IBPort::getAttributeDescriptions();
     for (auto port = ports.begin(); port != ports.end(); port++) {

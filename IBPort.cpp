@@ -142,7 +142,7 @@ void IBPort::resetCounters(ibnd_port_t* port, struct ibmad_port *srcport) throw(
     if (!pma_query_via(rcvbuf.get(), &portID, port->portnum, TIMEOUT, CLASS_PORT_INFO, srcport))
         throw IBPortException(guid, "Couldn't query capabilities");
 
-    if (!performance_reset_via(rcvbuf.get(), &portID, port->portnum, static_cast<unsigned int>(~0), TIMEOUT,
+    if (!performance_reset_via(rcvbuf.get(), &portID, port->portnum, static_cast<uint32_t>(~0), TIMEOUT,
                                IB_GSI_PORT_COUNTERS, srcport))
         throw IBPortException(guid, "Couldn't reset base performance counters of port");
 
