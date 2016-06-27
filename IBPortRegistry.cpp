@@ -6,6 +6,10 @@
 #include "IBPort.h"
 #include "IBPortRegistry.h"
 
+std::shared_ptr<IBPort> IBPortRegistry::operator[](const uint64_t guid) {
+    return portByGUIDRegistry[guid];
+}
+
 void IBPortRegistry::registerPort(std::shared_ptr<IBPort> port) {
     IBAddress portAddr(*port);
     if (portRegistry.find(portAddr) != portRegistry.end())
@@ -15,6 +19,10 @@ void IBPortRegistry::registerPort(std::shared_ptr<IBPort> port) {
         interestRegistry[portAddr]->setPeer(port);
         port->setPeer(interestRegistry[portAddr]);
         interestRegistry.erase(portAddr);
+    }
+    if (portByGUIDRegistry.count(port->getGuid()) == 0) {
+        // Switch ports tend to have the same GUID *argh*
+        portByGUIDRegistry[port->getGuid()] = port;
     }
 }
 

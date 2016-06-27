@@ -7,9 +7,11 @@
 
 #include <string>
 #include <memory>
+#include <map>
 #include "IBException.h"
 
 class IBHost;
+class IBSubnetManager;
 
 class IcingaOutput {
 public:
@@ -23,12 +25,14 @@ public:
     void failWarning(std::string&& reason);
     void failUnknown(std::string&& reason);
     void setIBHostDetail(std::shared_ptr<IBHost>);
+    void setIBSubnetManagersDetail(std::shared_ptr<std::map<uint64_t, std::shared_ptr<IBSubnetManager>>>);
     void finish();
     IcingaOutput();
     const int getRC() const {
         return rc;
     }
     void printPerformanceData(std::shared_ptr<IBHost>);
+    void printPerformanceData(std::shared_ptr<std::map<uint64_t, std::shared_ptr<IBSubnetManager>>>);
     const bool getDidFinish() const {
         return didFinish;
     }

@@ -28,9 +28,11 @@ public:
     std::string getNodeName(const uint64_t guid) const;
     void finishParsing(std::shared_ptr<IBHostRegistry>, bool) throw(IBNetfileParserException);
     std::list<std::pair<std::shared_ptr<IBHost>, std::shared_ptr<IBHost>>> getExpectedLinks() const;
+    std::list<uint64_t> getSubnetManagers() const;
 
 private:
     std::map<uint64_t, std::string> nodeNames;
+    std::list<uint64_t> subnetManagers;
     std::list<std::pair<std::shared_ptr<IBHost>, std::shared_ptr<IBHost>>> expectedLinks;
     std::string file, defaultNodeName;
     YAML::Node netfile;

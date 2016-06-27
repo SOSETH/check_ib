@@ -35,6 +35,8 @@ void IBNetfileParser::initialize() throw(IBNetfileParser::IBNetfileParserExcepti
         if (!(*node)["name"])
             throw IBNetfileParserException("Required attribute 'name' of node is missing!");
         nodeNames[(*node)["guid"].as<uint64_t>()] = (*node)["name"].as<std::string>();
+        if ((*node)["isSM"] && (*node)["isSM"].as<bool>())
+            subnetManagers.push_back((*node)["guid"].as<uint64_t>());
     }
 }
 
@@ -75,4 +77,8 @@ void IBNetfileParser::finishParsing(std::shared_ptr<IBHostRegistry> hostReg, boo
 
 std::list<std::pair<std::shared_ptr<IBHost>, std::shared_ptr<IBHost>>> IBNetfileParser::getExpectedLinks() const {
     return expectedLinks;
+}
+
+std::list<uint64_t> IBNetfileParser::getSubnetManagers() const {
+    return subnetManagers;
 }

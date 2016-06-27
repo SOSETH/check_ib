@@ -15,7 +15,7 @@ endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-set(SOURCE_FILES main.cpp IBHost.cpp IBHost.h IBPort.cpp IBPort.h IBPortRegistry.cpp IBPortRegistry.cpp IBPortRegistry.h IBException.h IBNetfileParser.cpp IBNetfileParser.h IBAddress.cpp IBAddress.h IBHostRegistry.cpp IBHostRegistry.h IBValidator.h IcingaOutput.cpp IcingaOutput.h IBHostValidator.cpp IBHostValidator.h IBValidator.cpp IBNetworkValidator.cpp IBNetworkValidator.h)
+set(SOURCE_FILES main.cpp IBHost.cpp IBHost.h IBPort.cpp IBPort.h IBPortRegistry.cpp IBPortRegistry.cpp IBPortRegistry.h IBException.h IBNetfileParser.cpp IBNetfileParser.h IBAddress.cpp IBAddress.h IBHostRegistry.cpp IBHostRegistry.h IBValidator.h IcingaOutput.cpp IcingaOutput.h IBHostValidator.cpp IBHostValidator.h IBValidator.cpp IBNetworkValidator.cpp IBNetworkValidator.h IBSubnetManager.cpp IBSubnetManager.h)
 
 find_package( Boost 1.50 COMPONENTS program_options REQUIRED )
 include_directories(/usr/include/infiniband ${Boost_INCLUDE_DIR})

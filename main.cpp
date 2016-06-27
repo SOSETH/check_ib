@@ -108,7 +108,7 @@ int main(int argc, const char* const* argv) {
             std::unique_ptr<IBValidator> ptr = std::unique_ptr<IBHostValidator>(new IBHostValidator((*options)["check-host"].as<std::string>(), parser, output, hostRegistry));
             validator.swap(ptr);
         } else if (options->count("check-net")) {
-            std::unique_ptr<IBValidator> ptr = std::unique_ptr<IBNetworkValidator>(new IBNetworkValidator(parser, output, ibmad_port));
+            std::unique_ptr<IBValidator> ptr = std::unique_ptr<IBNetworkValidator>(new IBNetworkValidator(parser, output, ibmad_port, options, reg, hostRegistry));
             validator.swap(ptr);
         }
 

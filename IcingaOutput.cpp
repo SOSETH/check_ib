@@ -6,6 +6,7 @@
 #include "IcingaOutput.h"
 #include "IBHost.h"
 #include "IBPort.h"
+#include "IBSubnetManager.h"
 
 IcingaOutput::IcingaOutput() {
     rc = -1;
@@ -14,6 +15,15 @@ IcingaOutput::IcingaOutput() {
 void IcingaOutput::setIBHostDetail(std::shared_ptr<IBHost> host) {
     dumpFun = [host] () {
         std::cout << host << std::endl;
+    };
+}
+
+
+void IcingaOutput::setIBSubnetManagersDetail(std::shared_ptr<std::map<uint64_t, std::shared_ptr<IBSubnetManager>>> smMap) {
+    dumpFun = [smMap] () {
+        for (auto sm = smMap->begin(); sm != smMap->end(); sm++) {
+            std::cout << *(sm->second);
+        }
     };
 }
 
@@ -71,5 +81,31 @@ void IcingaOutput::printPerformanceData(std::shared_ptr<IBHost> host) {
                     break;
             }
         }
+    }
+}
+
+void IcingaOutput::printPerformanceData(std::shared_ptr<std::map<uint64_t, std::shared_ptr<IBSubnetManager>>> smMap) {
+    if (rc == -1) {
+        rc = 0;
+        std::cout << "OK";
+    }
+
+    for (auto smEntry = smMap->begin(); smEntry != smMap->end(); smEntry++) {
+        auto sm = smEntry->second;
+        if (isFirstPerformanceMetric) {
+            isFirstPerformanceMetric = false;
+            std::cout << " | ";
+        } else
+            std::cout << " ";
+        std::ostringstream prefix;
+        if (auto host = sm->getPort()->getHost().lock()) {
+            prefix << "'SM " << host->getName() << "-" << sm->getPort()->getPortNum() << " ";
+        } else {
+            prefix << "'SM " << std::hex << sm->getPort()->getGuid() << " LID " << sm->getPort()->getLid() << " ";
+        }
+        std::string pstr = prefix.str();
+        std::cout << pstr << "ACT'=" << sm->getActCounter() << "c "
+                << pstr << "priority'=" << sm->getPriority() << " "
+                << pstr << "state'=" << static_cast<int>(sm->getState());
     }
 }
