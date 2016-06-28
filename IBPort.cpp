@@ -132,6 +132,10 @@ namespace check_ib {
     }
 
     void IBPort::resetCounters(ibnd_port_t *port, struct ibmad_port *srcport) throw(IBPortException) {
+        if (port->node->type == IB_NODE_SWITCH && port->portnum == 0) {
+            return;
+        }
+
         const std::unique_ptr<uint8_t[]> rcvbuf(new uint8_t[1024]);
 
         ib_portid_t portID = {0};
