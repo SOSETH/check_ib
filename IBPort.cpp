@@ -82,6 +82,7 @@ namespace check_ib {
             attributeDesc[RX_PACKETS] = "RX (packets)";
             attributeDesc[TX_PACKETS] = "TX (packets)";
             attributeDesc[TX_WAIT_TIME] = "average transmit wait time";
+            attributeDesc[MGMT_PACKETS_DROPPED] = "management frames dropped";
         }
     }
 

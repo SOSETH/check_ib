@@ -86,7 +86,8 @@ namespace check_ib {
             TX_BYTES,               /* Total number of bytes transmitted */
             RX_PACKETS,             /* Total number of packets received */
             TX_PACKETS,             /* Total number of packets transmitted */
-            TX_WAIT_TIME            /* Number of ticks where port had data to send but couldn't */
+            TX_WAIT_TIME,           /* Number of ticks where port had data to send but couldn't */
+            MGMT_PACKETS_DROPPED    /* Amount of dropped management packets. This indicates severe congestion */
         };
 
         PHYSPortState getStatePhysical() const noexcept {
@@ -204,7 +205,7 @@ namespace check_ib {
         void queryPort(ibnd_port_t *, struct ibmad_port *) throw(IBPortException);
 
     private:
-        int numAttrs = 9;
+        int numAttrs = 10;
         int numCount = 5;
 
         struct {
@@ -212,7 +213,7 @@ namespace check_ib {
             MAD_FIELDS value;
 
             uint32_t (*fun)(MAD_FIELDS, MAD_FIELDS, uint8_t *, uint8_t *);
-        } attributeList[9] = {
+        } attributeList[10] = {
                 // Key in our enum,         Key in IB MAD enum,     parse function
                 {SYMBOL_ERRORS,             IB_PC_ERR_SYM_F,        &getUIntField},
                 {LINK_ERRS_RECOVERED,       IB_PC_LINK_RECOVERS_F,  &getUIntField},
@@ -222,7 +223,8 @@ namespace check_ib {
                 {PORT_TX_CONSTR_ERRS,       IB_PC_ERR_XMTCONSTR_F,  &getUIntField},
                 {PORT_RX_CONSTR_ERRS,       IB_PC_ERR_RCVCONSTR_F,  &getUIntField},
                 {LOCAL_LINK_INTEGR_ERRS,    IB_PC_ERR_LOCALINTEG_F, &getUIntField},
-                {EXCESSIVE_BUFFER_OVERRUNS, IB_PC_ERR_EXCESS_OVR_F, &getUIntField}
+                {EXCESSIVE_BUFFER_OVERRUNS, IB_PC_ERR_EXCESS_OVR_F, &getUIntField},
+                {MGMT_PACKETS_DROPPED,      IB_PC_VL15_DROPPED_F,   &getUIntField}
         };
 
         struct {
