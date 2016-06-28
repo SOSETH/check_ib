@@ -7,16 +7,20 @@
 
 #include "IBValidator.h"
 
-class IBHostValidator : public IBValidator {
-private:
-    std::string myHostName;
+namespace check_ib {
 
-public:
-    IBHostValidator(const std::string&);
-    IBHostValidator(const std::string&&);
+    class IBHostValidator : public IBValidator {
+    private:
+        std::string myHostName;
 
-    virtual bool isValid(std::shared_ptr<IBNetfileParser>, std::shared_ptr<IcingaOutput>, std::shared_ptr<IBHostRegistry>) throw(IBException);
-};
+    public:
+        IBHostValidator(const std::string &) noexcept;
 
+        IBHostValidator(const std::string &&) noexcept;
+
+        virtual bool isValid(std::shared_ptr<IBNetfileParser>, std::shared_ptr<IcingaOutput>,
+                             std::shared_ptr<IBHostRegistry>) throw(IBException);
+    };
+}
 
 #endif //CHECK_IB_IBHOSTVALIDATOR_H

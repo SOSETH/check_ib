@@ -7,24 +7,31 @@
 
 #include <map>
 #include <memory>
+#include "IBException.h"
 
-class IBHost;
+namespace check_ib {
+    class IBHost;
 
-class IBHostRegistry {
-private:
-    std::map<uint64_t, std::shared_ptr<IBHost>> hostByGUID;
-    std::map<std::string, std::shared_ptr<IBHost>> hostByName;
+    class IBHostRegistry {
+    private:
+        std::map<uint64_t, std::shared_ptr<IBHost>> hostByGUID;
+        std::map<std::string, std::shared_ptr<IBHost>> hostByName;
 
-public:
-    void addIBHost(std::shared_ptr<IBHost>);
-    std::shared_ptr<IBHost> operator[](const uint64_t);
-    std::shared_ptr<IBHost> operator[](const std::string&);
-    std::shared_ptr<IBHost> operator[](const std::string&&);
-    bool has(const std::string&) const;
-    const std::map<std::string, std::shared_ptr<IBHost>> & getAllByName() const {
-        return hostByName;
+    public:
+        void addIBHost(std::shared_ptr<IBHost>) throw(IBException);
+
+        std::shared_ptr<IBHost> operator[](const uint64_t) noexcept;
+
+        std::shared_ptr<IBHost> operator[](const std::string &) noexcept;
+
+        std::shared_ptr<IBHost> operator[](const std::string &&) noexcept;
+
+        bool has(const std::string &) const noexcept;
+
+        const std::map<std::string, std::shared_ptr<IBHost>> &getAllByName() const noexcept {
+            return hostByName;
+        };
     };
-};
-
+}
 
 #endif //CHECK_IB_IBHOSTREGISTRY_H

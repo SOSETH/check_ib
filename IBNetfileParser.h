@@ -11,34 +11,41 @@
 #include <map>
 #include "IBException.h"
 
-class IBHostRegistry;
-class IBHost;
+namespace check_ib {
 
-class IBNetfileParser {
-public:
-    class IBNetfileParserException : public virtual IBException {
+    class IBHostRegistry;
+    class IBHost;
+
+    class IBNetfileParser {
     public:
-        IBNetfileParserException(const std::string &arg) : IBException(arg), domain_error(arg) { }
-        IBNetfileParserException(const char *arg) : IBException(arg), domain_error(arg) { }
+        class IBNetfileParserException : public virtual IBException {
+        public:
+            IBNetfileParserException(const std::string &arg) noexcept : IBException(arg), domain_error(arg) { }
+            IBNetfileParserException(const char *arg) noexcept : IBException(arg), domain_error(arg) { }
+        };
+
+        IBNetfileParser(std::string &src) throw(IBNetfileParserException);
+        IBNetfileParser(std::string &&src) throw(IBNetfileParserException);
+        IBNetfileParser(const std::string &src) throw(IBNetfileParserException);
+
+        std::string getNodeName(const uint64_t guid) const noexcept;
+
+        void finishParsing(std::shared_ptr<IBHostRegistry>, bool) throw(IBNetfileParserException);
+
+        std::list<std::pair<std::shared_ptr<IBHost>, std::shared_ptr<IBHost>>> getExpectedLinks() const noexcept;
+
+        std::list<uint64_t> getSubnetManagers() const noexcept;
+
+    private:
+        std::map<uint64_t, std::string> nodeNames;
+        std::list<uint64_t> subnetManagers;
+        std::list<std::pair<std::shared_ptr<IBHost>, std::shared_ptr<IBHost>>> expectedLinks;
+        std::string file, defaultNodeName;
+        YAML::Node netfile;
+
+        void initialize() throw(IBNetfileParserException);
     };
-
-    IBNetfileParser(std::string & src) throw(IBNetfileParserException);
-    IBNetfileParser(std::string && src) throw(IBNetfileParserException);
-    IBNetfileParser(const std::string& src) throw(IBNetfileParserException);
-
-    std::string getNodeName(const uint64_t guid) const;
-    void finishParsing(std::shared_ptr<IBHostRegistry>, bool) throw(IBNetfileParserException);
-    std::list<std::pair<std::shared_ptr<IBHost>, std::shared_ptr<IBHost>>> getExpectedLinks() const;
-    std::list<uint64_t> getSubnetManagers() const;
-
-private:
-    std::map<uint64_t, std::string> nodeNames;
-    std::list<uint64_t> subnetManagers;
-    std::list<std::pair<std::shared_ptr<IBHost>, std::shared_ptr<IBHost>>> expectedLinks;
-    std::string file, defaultNodeName;
-    YAML::Node netfile;
-    void initialize() throw(IBNetfileParserException);
-};
+}
 
 
 #endif //CHECK_IB_IBNETFILEPARSER_H

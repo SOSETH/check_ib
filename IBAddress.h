@@ -8,32 +8,36 @@
 #include <ibnetdisc.h>
 #include <ostream>
 
-class IBPort;
+namespace check_ib {
+    class IBPort;
 
-class IBAddress {
-private:
-    uint64_t guid;
-    uint16_t lid;
-    int num;
+    class IBAddress {
+    private:
+        uint64_t guid;
+        uint16_t lid;
+        int num;
 
-public:
-    uint64_t getGuid() const {
-        return guid;
-    }
+    public:
+        uint64_t getGuid() const noexcept {
+            return guid;
+        }
 
-    uint16_t getLid() const {
-        return lid;
-    }
+        uint16_t getLid() const noexcept {
+            return lid;
+        }
 
-    int getNum() const {
-        return num;
-    }
+        int getNum() const noexcept {
+            return num;
+        }
 
-    IBAddress(ibnd_port_t* port);
-    IBAddress(IBPort & port);
-    bool operator<(const IBAddress& other) const;
-};
+        IBAddress(ibnd_port_t *port) noexcept;
 
-std::ostream& operator<<(std::ostream&, const IBAddress &);
+        IBAddress(IBPort &port) noexcept;
+
+        bool operator<(const IBAddress &other) const noexcept;
+    };
+
+    std::ostream &operator<<(std::ostream &, const IBAddress &) noexcept;
+}
 
 #endif //CHECK_IB_IBADDRESS_H

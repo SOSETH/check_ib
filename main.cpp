@@ -4,7 +4,9 @@
 #include <infiniband/ibnetdisc.h>
 #include <memory>
 #include "IBHost.h"
+#include "IBAddress.h"
 #include "IBNetfileParser.h"
+#include "IBPortRegistry.h"
 #include "IBHostRegistry.h"
 #include "IcingaOutput.h"
 #include "IBValidator.h"
@@ -78,18 +80,18 @@ int main(int argc, const char* const* argv) {
     struct ibmad_port *ibmad_port = mad_rpc_open_port(NULL, 0, mgmt_classes, 4);
 
     // Parse the netfile and initialize shared objects
-    std::shared_ptr<IBNetfileParser> parser(new IBNetfileParser(options["netfile"].as<std::string>()));
-    std::shared_ptr<IBPortRegistry> reg(new IBPortRegistry());
-    std::shared_ptr<IBHostRegistry> hostRegistry(new IBHostRegistry());
-    std::shared_ptr<IcingaOutput> output(new IcingaOutput());
+    std::shared_ptr<check_ib::IBNetfileParser> parser(new check_ib::IBNetfileParser(options["netfile"].as<std::string>()));
+    std::shared_ptr<check_ib::IBPortRegistry> reg(new check_ib::IBPortRegistry());
+    std::shared_ptr<check_ib::IBHostRegistry> hostRegistry(new check_ib::IBHostRegistry());
+    std::shared_ptr<check_ib::IcingaOutput> output(new check_ib::IcingaOutput());
 
     // Build the object tree;
     ibnd_node_t* node = fabric->nodes;
     try {
         // Convert C magic pointer thingys into C++ classes
-        std::list<std::shared_ptr<IBHost>> hosts;
+        std::list<std::shared_ptr<check_ib::IBHost>> hosts;
         while (node) {
-            hosts.push_back(IBHost::make_host(node, reg, ibmad_port, parser, hostRegistry, options));
+            hosts.push_back(check_ib::IBHost::make_host(node, reg, ibmad_port, parser, hostRegistry, options));
             node = node->next;
         }
 
@@ -98,19 +100,20 @@ int main(int argc, const char* const* argv) {
             reg->isMissingSomething(true);
 
             for (auto iterator = hosts.begin(); iterator != hosts.end(); iterator++) {
+                std::cout << "----------------------------------------------------------" << std::endl;
                 std::cout << (*iterator) << std::endl;
             }
         }
 
         // Tell the parser that we have constructed everything we can. At this point, we should know about all hosts.
         parser->finishParsing(hostRegistry, options.count("dump") > 0);
-        std::unique_ptr<IBValidator> validator;
+        std::unique_ptr<check_ib::IBValidator> validator;
 
         if (options.count("check-host")) {
-            std::unique_ptr<IBValidator> ptr = std::unique_ptr<IBHostValidator>(new IBHostValidator(options["check-host"].as<std::string>()));
+            std::unique_ptr<check_ib::IBValidator> ptr = std::unique_ptr<check_ib::IBHostValidator>(new check_ib::IBHostValidator(options["check-host"].as<std::string>()));
             validator.swap(ptr);
         } else if (options.count("check-net")) {
-            std::unique_ptr<IBValidator> ptr = std::unique_ptr<IBNetworkValidator>(new IBNetworkValidator(ibmad_port, options, reg));
+            std::unique_ptr<check_ib::IBValidator> ptr = std::unique_ptr<check_ib::IBNetworkValidator>(new check_ib::IBNetworkValidator(ibmad_port, options, reg));
             validator.swap(ptr);
         }
 

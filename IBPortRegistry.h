@@ -8,23 +8,31 @@
 #include <map>
 #include <list>
 #include <memory>
-#include "IBAddress.h"
+#include "IBException.h"
 
-class IBPort;
+namespace check_ib {
+    class IBPort;
+    class IBAddress;
 
-class IBPortRegistry {
-public:
-    void registerPort(std::shared_ptr<IBPort>);
-    std::shared_ptr<IBPort> getPortWithAddress(const IBAddress);
-    bool hasPortWithAddress(const IBAddress) const;
-    void registerInterestFor(IBAddress guid, std::shared_ptr<IBPort>);
-    bool isMissingSomething(const bool printOnErr) const;
-    std::shared_ptr<IBPort> operator[](const uint64_t);
+    class IBPortRegistry {
+    public:
+        void registerPort(std::shared_ptr<IBPort>) noexcept;
 
-protected:
-    std::map<IBAddress, std::shared_ptr<IBPort>> portRegistry;
-    std::map<IBAddress, std::shared_ptr<IBPort>> interestRegistry;
-    std::map<uint64_t, std::shared_ptr<IBPort>> portByGUIDRegistry;
-};
+        std::shared_ptr<IBPort> getPortWithAddress(const IBAddress) noexcept;
+
+        bool hasPortWithAddress(const IBAddress) const noexcept;
+
+        void registerInterestFor(IBAddress& guid, std::shared_ptr<IBPort>) throw(IBException);
+
+        bool isMissingSomething(const bool printOnErr) const noexcept;
+
+        std::shared_ptr<IBPort> operator[](const uint64_t) noexcept;
+
+    protected:
+        std::map<IBAddress, std::shared_ptr<IBPort>> portRegistry;
+        std::map<IBAddress, std::shared_ptr<IBPort>> interestRegistry;
+        std::map<uint64_t, std::shared_ptr<IBPort>> portByGUIDRegistry;
+    };
+}
 
 #endif //CHECK_IB_IBPORTREGISTRY_H

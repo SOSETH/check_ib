@@ -9,43 +9,43 @@
 #include <memory>
 #include <map>
 #include <sstream>
-#include "IBException.h"
 
-class IBHost;
-class IBSubnetManager;
+namespace check_ib {
+    class IBHost;
+    class IBSubnetManager;
 
-class IcingaOutput {
-public:
-    class IcingaOutputException : public virtual IBException {
+    class IcingaOutput {
     public:
-        IcingaOutputException(const std::string &arg) : IBException(arg), domain_error(arg) { }
-        IcingaOutputException(const char *arg) : IBException(arg), domain_error(arg)  { }
+        std::ostream &failCritical() noexcept;
+        std::ostream &failWarning() noexcept;
+        std::ostream &failUnknown() noexcept;
+
+        void setIBHostDetail(std::shared_ptr<IBHost>) noexcept;
+        void setIBSubnetManagersDetail(std::shared_ptr<std::map<uint64_t, std::shared_ptr<IBSubnetManager>>>) noexcept;
+
+        void finish() noexcept;
+
+        IcingaOutput() noexcept;
+
+        const int getRC() const noexcept {
+            return rc;
+        }
+
+        void printPerformanceData(std::shared_ptr<IBHost>) noexcept;
+        void printPerformanceData(std::shared_ptr<std::map<uint64_t, std::shared_ptr<IBSubnetManager>>>) noexcept;
+
+        const bool getDidFinish() const noexcept {
+            return didFinish;
+        }
+
+    private:
+        std::function<void()> dumpFun;
+        int rc;
+        bool isFirstPerformanceMetric = true;
+        bool didFinish = false;
+        std::ostringstream outputMessage;
+        std::ostringstream performanceData;
     };
-
-    std::ostream& failCritical();
-    std::ostream& failWarning();
-    std::ostream& failUnknown();
-    void setIBHostDetail(std::shared_ptr<IBHost>);
-    void setIBSubnetManagersDetail(std::shared_ptr<std::map<uint64_t, std::shared_ptr<IBSubnetManager>>>);
-    void finish();
-    IcingaOutput();
-    const int getRC() const {
-        return rc;
-    }
-    void printPerformanceData(std::shared_ptr<IBHost>);
-    void printPerformanceData(std::shared_ptr<std::map<uint64_t, std::shared_ptr<IBSubnetManager>>>);
-    const bool getDidFinish() const {
-        return didFinish;
-    }
-
-private:
-    std::function<void()> dumpFun;
-    int rc;
-    bool isFirstPerformanceMetric = true;
-    bool didFinish = false;
-    std::ostringstream outputMessage;
-    std::ostringstream performanceData;
-};
-
+}
 
 #endif //CHECK_IB_ICINGAOUTPUT_H

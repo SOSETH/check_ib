@@ -10,42 +10,47 @@
 #include <memory>
 #include <string>
 #include <boost/program_options.hpp>
-#include "IBPortRegistry.h"
-#include "IBNetfileParser.h"
+#include "IBException.h"
 
-class IBPort;
-class IBHostRegistry;
+namespace check_ib {
+    class IBPort;
+    class IBHostRegistry;
+    class IBPortRegistry;
+    class IBNetfileParser;
 
-class IBHost {
-public:
-    static std::shared_ptr<IBHost> make_host(ibnd_node_t*, std::shared_ptr<IBPortRegistry>,
-                                             struct ibmad_port*, std::shared_ptr<IBNetfileParser>,
-                                             std::shared_ptr<IBHostRegistry>, boost::program_options::variables_map&);
+    class IBHost {
+    public:
+        static std::shared_ptr<IBHost> make_host(ibnd_node_t *, std::shared_ptr<IBPortRegistry>,
+                                                 struct ibmad_port *, std::shared_ptr<IBNetfileParser>,
+                                                 std::shared_ptr<IBHostRegistry>,
+                                                 boost::program_options::variables_map &) throw(IBException);
 
-    unsigned int getNumPorts() const {
-        return numPorts;
-    }
+        unsigned int getNumPorts() const noexcept {
+            return numPorts;
+        }
 
-    uint64_t getGUID() const {
-        return guid;
-    }
+        uint64_t getGUID() const noexcept {
+            return guid;
+        }
 
-    const std::list<std::shared_ptr<IBPort>> getPorts() const {
-        return ports;
-    }
+        const std::list<std::shared_ptr<IBPort>> getPorts() const noexcept {
+            return ports;
+        }
 
-    const std::string & getName() const {
-        return name;
-    }
+        const std::string &getName() const noexcept {
+            return name;
+        }
 
-protected:
-    IBHost(std::shared_ptr<IBPortRegistry>);
-    uint64_t guid;
-    unsigned int numPorts;
-    std::list<std::shared_ptr<IBPort>> ports;
-    std::shared_ptr<IBPortRegistry> registry;
-    std::string name;
-};
+    protected:
+        IBHost(std::shared_ptr<IBPortRegistry>) noexcept;
 
-std::ostream& operator<<(std::ostream&, const IBHost*);
+        uint64_t guid;
+        unsigned int numPorts;
+        std::list<std::shared_ptr<IBPort>> ports;
+        std::shared_ptr<IBPortRegistry> registry;
+        std::string name;
+    };
+
+    std::ostream &operator<<(std::ostream &, const IBHost *) noexcept;
+}
 #endif //CHECK_IB_IBHOST_H
