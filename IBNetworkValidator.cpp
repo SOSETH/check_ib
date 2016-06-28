@@ -13,15 +13,13 @@
 
 #define TIMEOUT 100
 
-IBNetworkValidator::IBNetworkValidator(std::shared_ptr<IBNetfileParser> parser, std::shared_ptr<IcingaOutput> output,
-                                       struct ibmad_port *ibmad_port,
-                                       std::shared_ptr<boost::program_options::variables_map> options,
-                                       std::shared_ptr<IBPortRegistry> portRegistry,
-                                       std::shared_ptr<IBHostRegistry> hostRegistry)
-        : IBValidator(parser, output), ibmad_port(ibmad_port), options(options), portRegistry(portRegistry),
-          hostRegistry(hostRegistry) {}
+IBNetworkValidator::IBNetworkValidator(struct ibmad_port *ibmad_port,
+                                       boost::program_options::variables_map& options,
+                                       std::shared_ptr<IBPortRegistry> portRegistry)
+        : IBValidator(), ibmad_port(ibmad_port), options(options), portRegistry(portRegistry) {}
 
-bool IBNetworkValidator::isValid() throw(IBException) {
+bool IBNetworkValidator::isValid(std::shared_ptr<IBNetfileParser> parser, std::shared_ptr<IcingaOutput> output,
+                                 std::shared_ptr<IBHostRegistry> hostRegistry) throw(IBException) {
     const std::unique_ptr<uint8_t[]> buf(new uint8_t[1024]);
     ib_portid_t portID = {0};
 
@@ -69,7 +67,7 @@ bool IBNetworkValidator::isValid() throw(IBException) {
         throw IBNetworkValidatorException("Implausible packet size!");
     int numberOfManagers = (size-4)/32;
 
-    if (options->count("dump")) {
+    if (options.count("dump")) {
         std::cout << "Packet size: " << size << std::endl;
         dumpBuffer(retval+4, 1020);
         std::cout << "Number of managers from pointer oracle: " << numberOfManagers << std::endl;
@@ -82,7 +80,7 @@ bool IBNetworkValidator::isValid() throw(IBException) {
         (*smMap)[sm->getPort()->getGuid()] = std::shared_ptr<IBSubnetManager>(sm);
         retval += 32;
     }
-    if (options->count("dump")) {
+    if (options.count("dump")) {
         for (auto sm = smMap->begin(); sm != smMap->end(); sm++) {
             std::cout << *(sm->second);
         }
@@ -99,7 +97,7 @@ bool IBNetworkValidator::isValid() throw(IBException) {
         auto ports = smHost->getPorts();
         for (auto port = ports.begin(); port != ports.end(); port++) {
             if (workMap.count((*port)->getGuid()) == 0) {
-                output->failWarning("Missing subnet manager!");
+                output->failWarning() << "Missing subnet manager at " << (*port);
                 isOk = false;
             } else {
                 workMap.erase((*port)->getGuid());
@@ -107,7 +105,7 @@ bool IBNetworkValidator::isValid() throw(IBException) {
         }
     }
     if (workMap.size() > 0) {
-        output->failWarning("More subnet managers than expected!");
+        output->failWarning() << "More subnet managers than expected!";
         isOk = false;
     }
     output->printPerformanceData(smMap);

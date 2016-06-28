@@ -51,8 +51,6 @@ links:
     to: sw-ib-mellanox
   - from: sw-ib-voltaire
     to: sw-ib-mellanox
-  - from: sw-ib-voltaire
-    to: sw-ib-mellanox
 config:
   - name: resetCounters
     value: False

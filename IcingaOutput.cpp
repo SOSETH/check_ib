@@ -27,55 +27,67 @@ void IcingaOutput::setIBSubnetManagersDetail(std::shared_ptr<std::map<uint64_t, 
     };
 }
 
-void IcingaOutput::failCritical(std::string &&reason) {
-    std::cout << "CRITICAL: " << reason;
-    rc = 2;
+std::ostream& IcingaOutput::failCritical() {
+    if (rc < 2)
+        rc = 2;
+    return outputMessage << std::endl << " Crit: ";
 }
 
-void IcingaOutput::failWarning(std::string &&reason) {
-    if (rc != -1)
-        return;
-    std::cout << "WARNING: " << reason;
-    rc = 1;
+std::ostream& IcingaOutput::failWarning() {
+    if (rc < 1)
+        rc = 1;
+    return outputMessage << std::endl << " Warn: ";
 }
 
-void IcingaOutput::failUnknown(std::string &&reason) {
-    if (rc != -1)
-        return;
-    std::cout << "UNKNOWN: " << reason;
-    rc = 3;
+std::ostream& IcingaOutput::failUnknown() {
+    if (rc < 3)
+        rc = 3;
+    return outputMessage << std::endl << " Unknown: ";
 }
 
 void IcingaOutput::finish() {
-    std::cout << std::endl;
     if (didFinish)
         return;
+    if (rc == -1)
+        rc = 0;
+    switch (rc) {
+        case 0:
+            std::cout << "OK";
+            break;
+        case 1:
+            std::cout << "WARNING";
+            break;
+        case 2:
+            std::cout << "CRITICAL";
+            break;
+        default:
+            std::cout << "UNKNOWN";
+            break;
+    }
+    std::cout << performanceData.str();
+    std::cout << outputMessage.str() << std::endl;
+
     if (rc != 0 && dumpFun)
         dumpFun();
     didFinish = true;
 }
 
 void IcingaOutput::printPerformanceData(std::shared_ptr<IBHost> host) {
-    if (rc == -1) {
-        rc = 0;
-        std::cout << "OK";
-    }
-
     auto ports = host->getPorts();
     auto description = IBPort::getAttributeDescriptions();
     for (auto port = ports.begin(); port != ports.end(); port++) {
         for (auto attribute = description.begin(); attribute != description.end(); attribute++) {
             if (isFirstPerformanceMetric) {
                 isFirstPerformanceMetric = false;
-                std::cout << " | ";
+                performanceData << " | ";
             } else
-                std::cout << " ";
-            std::cout << "'port " << (*port)->getPortNum() << " " << attribute->second << "'=" << (**port)[attribute->first];
+                performanceData << " ";
+            performanceData << "'port " << (*port)->getPortNum() << " " << attribute->second << "'=" << (**port)[attribute->first];
             // Print "UOM", see https://nagios-plugins.org/doc/guidelines.html#PLUGOUTPUT
             switch (attribute->first) {
                 case IBPort::PortAttribute::RX_BYTES:
                 case IBPort::PortAttribute::TX_BYTES:
-                    std::cout << "B";
+                    performanceData << "B";
                     break;
                 default:
                     break;
@@ -85,18 +97,13 @@ void IcingaOutput::printPerformanceData(std::shared_ptr<IBHost> host) {
 }
 
 void IcingaOutput::printPerformanceData(std::shared_ptr<std::map<uint64_t, std::shared_ptr<IBSubnetManager>>> smMap) {
-    if (rc == -1) {
-        rc = 0;
-        std::cout << "OK";
-    }
-
     for (auto smEntry = smMap->begin(); smEntry != smMap->end(); smEntry++) {
         auto sm = smEntry->second;
         if (isFirstPerformanceMetric) {
             isFirstPerformanceMetric = false;
-            std::cout << " | ";
+            performanceData << " | ";
         } else
-            std::cout << " ";
+            performanceData << " ";
         std::ostringstream prefix;
         if (auto host = sm->getPort()->getHost().lock()) {
             prefix << "'SM " << host->getName() << "-" << sm->getPort()->getPortNum() << " ";
@@ -104,7 +111,7 @@ void IcingaOutput::printPerformanceData(std::shared_ptr<std::map<uint64_t, std::
             prefix << "'SM " << std::hex << sm->getPort()->getGuid() << " LID " << sm->getPort()->getLid() << " ";
         }
         std::string pstr = prefix.str();
-        std::cout << pstr << "ACT'=" << sm->getActCounter() << "c "
+        performanceData << pstr << "ACT'=" << sm->getActCounter() << "c "
                 << pstr << "priority'=" << sm->getPriority() << " "
                 << pstr << "state'=" << static_cast<int>(sm->getState());
     }

@@ -24,6 +24,7 @@ public:
 
     IBNetfileParser(std::string & src) throw(IBNetfileParserException);
     IBNetfileParser(std::string && src) throw(IBNetfileParserException);
+    IBNetfileParser(const std::string& src) throw(IBNetfileParserException);
 
     std::string getNodeName(const uint64_t guid) const;
     void finishParsing(std::shared_ptr<IBHostRegistry>, bool) throw(IBNetfileParserException);

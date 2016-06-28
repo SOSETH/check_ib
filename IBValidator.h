@@ -10,16 +10,12 @@
 
 class IBHostRegistry;
 class IcingaOutput;
+class IBHostRegistry;
 
 class IBValidator {
 public:
-    IBValidator(std::shared_ptr<IBNetfileParser> parser, std::shared_ptr<IcingaOutput> output);
-    virtual bool isValid() throw(IBException) = 0;
+    virtual bool isValid(std::shared_ptr<IBNetfileParser>, std::shared_ptr<IcingaOutput>, std::shared_ptr<IBHostRegistry>) throw(IBException) = 0;
     const bool hasLinkTo(const std::shared_ptr<IBHost>, const std::shared_ptr<IBHost>) const;
-
-protected:
-    std::shared_ptr<IBNetfileParser> parser;
-    std::shared_ptr<IcingaOutput> output;
 };
 
 

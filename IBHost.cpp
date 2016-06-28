@@ -12,18 +12,18 @@ IBHost::IBHost(std::shared_ptr<IBPortRegistry> myRegistry) : registry(myRegistry
     numPorts = 0;
 }
 
-std::shared_ptr<IBHost> IBHost::make_host(ibnd_node_t *host, std::shared_ptr<IBPortRegistry> myRegistry,
+std::shared_ptr<IBHost> IBHost::make_host(ibnd_node_t* host, std::shared_ptr<IBPortRegistry> myRegistry,
                                           struct ibmad_port *ibmad_port, std::shared_ptr<IBNetfileParser> nf,
                                           std::shared_ptr<IBHostRegistry> hostRegistry,
-                                          std::shared_ptr<boost::program_options::variables_map> options)  {
+                                          boost::program_options::variables_map& options)  {
     std::shared_ptr<IBHost> retval(new IBHost(myRegistry));
-    retval->guid =  host->guid;
+    retval->guid = host->guid;
     retval->numPorts = static_cast<unsigned int>(host->numports);
     retval->name = nf->getNodeName(retval->guid);
 
     bool clear = false;
-    if (options->count("clear") && options->count("check-host")) {
-        if ((*options)["check-host"].as<std::string>() == retval->name)
+    if (options.count("clear") && options.count("check-host")) {
+        if (options["check-host"].as<std::string>() == retval->name)
             clear = true;
     }
     for (int i = 0; i <= retval->numPorts; i++) {

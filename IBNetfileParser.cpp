@@ -18,6 +18,11 @@ IBNetfileParser::IBNetfileParser(std::string && src) throw(IBNetfileParser::IBNe
     initialize();
 }
 
+IBNetfileParser::IBNetfileParser(const std::string& src) throw(IBNetfileParser::IBNetfileParserException) {
+    this->file = src;
+    initialize();
+}
+
 void IBNetfileParser::initialize() throw(IBNetfileParser::IBNetfileParserException) {
     defaultNodeName = "UNDEFINED";
 
@@ -68,6 +73,12 @@ void IBNetfileParser::finishParsing(std::shared_ptr<IBHostRegistry> hostReg, boo
         if (!hostReg->has(dest)) {
             if (throwOnMissingHost)
                 throw IBNetfileParserException("Coudln't resolve destination of link - host does not exist!");
+            else
+                continue;
+        }
+        if (src == dest) {
+            if (throwOnMissingHost)
+                throw IBNetfileParserException("Loopback links are not supported!");
             else
                 continue;
         }

@@ -10,13 +10,12 @@
 class IBHostValidator : public IBValidator {
 private:
     std::string myHostName;
-    std::shared_ptr<IBHostRegistry> registry;
 
 public:
-    IBHostValidator(const std::string&, std::shared_ptr<IBNetfileParser>, std::shared_ptr<IcingaOutput>, std::shared_ptr<IBHostRegistry>);
-    IBHostValidator(const std::string&&, std::shared_ptr<IBNetfileParser>, std::shared_ptr<IcingaOutput>, std::shared_ptr<IBHostRegistry>);
+    IBHostValidator(const std::string&);
+    IBHostValidator(const std::string&&);
 
-    virtual bool isValid() throw(IBException);
+    virtual bool isValid(std::shared_ptr<IBNetfileParser>, std::shared_ptr<IcingaOutput>, std::shared_ptr<IBHostRegistry>) throw(IBException);
 };
 
 

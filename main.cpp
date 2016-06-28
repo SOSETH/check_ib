@@ -32,31 +32,33 @@ int main(int argc, const char* const* argv) {
     desc.add_options()
         ("help", "print this message")
         ("check-host", po::value<std::string>(), "check IB connectivity of a given host")
+        ("netfile", po::value<std::string>()->default_value("testfile.yml"),
+                   "location of the netfile (default: testfile.yml)")
         ("check-net", "check overall IB network status")
         ("clear", "clear performance counters after read (recommended)")
         ("dump", "dump all detected information about the network")
     ;
-    std::shared_ptr<po::variables_map> options(new po::variables_map());
-    po::store(po::parse_command_line(argc, argv, desc), *options);
-    po::notify(*options);
+    po::variables_map options;
+    po::store(po::parse_command_line(argc, argv, desc), options);
+    po::notify(options);
 
     // Check options
-    if (options->count("help")) {
+    if (options.count("help")) {
         std::cout << desc << std::endl;
         return 0;
     }
 
-    if (options->count("check-host") && options->count("check-net")) {
+    if (options.count("check-host") && options.count("check-net")) {
         std::cerr << "Only one of check-host and check-net may be specified!" << std::endl;
         return -1;
     }
 
-    if (options->count("check-host") > 1) {
+    if (options.count("check-host") > 1) {
         std::cerr << "Only one host can be checked at a time!" << std::endl;
         return -1;
     }
 
-    if ((!options->count("check-host")) && (!options->count("check-net"))) {
+    if ((!options.count("check-host")) && (!options.count("check-net"))) {
         std::cerr << "One of check-host and check-net must be specified!" << std::endl;
         std::cerr << desc << std::endl;
         return -1;
@@ -76,7 +78,7 @@ int main(int argc, const char* const* argv) {
     struct ibmad_port *ibmad_port = mad_rpc_open_port(NULL, 0, mgmt_classes, 4);
 
     // Parse the netfile and initialize shared objects
-    std::shared_ptr<IBNetfileParser> parser(new IBNetfileParser("testfile.yml"));
+    std::shared_ptr<IBNetfileParser> parser(new IBNetfileParser(options["netfile"].as<std::string>()));
     std::shared_ptr<IBPortRegistry> reg(new IBPortRegistry());
     std::shared_ptr<IBHostRegistry> hostRegistry(new IBHostRegistry());
     std::shared_ptr<IcingaOutput> output(new IcingaOutput());
@@ -92,7 +94,7 @@ int main(int argc, const char* const* argv) {
         }
 
         // Shall we dump everything?
-        if (options->count("dump")) {
+        if (options.count("dump")) {
             reg->isMissingSomething(true);
 
             for (auto iterator = hosts.begin(); iterator != hosts.end(); iterator++) {
@@ -101,23 +103,23 @@ int main(int argc, const char* const* argv) {
         }
 
         // Tell the parser that we have constructed everything we can. At this point, we should know about all hosts.
-        parser->finishParsing(hostRegistry, options->count("dump") > 0);
+        parser->finishParsing(hostRegistry, options.count("dump") > 0);
         std::unique_ptr<IBValidator> validator;
 
-        if (options->count("check-host")) {
-            std::unique_ptr<IBValidator> ptr = std::unique_ptr<IBHostValidator>(new IBHostValidator((*options)["check-host"].as<std::string>(), parser, output, hostRegistry));
+        if (options.count("check-host")) {
+            std::unique_ptr<IBValidator> ptr = std::unique_ptr<IBHostValidator>(new IBHostValidator(options["check-host"].as<std::string>()));
             validator.swap(ptr);
-        } else if (options->count("check-net")) {
-            std::unique_ptr<IBValidator> ptr = std::unique_ptr<IBNetworkValidator>(new IBNetworkValidator(parser, output, ibmad_port, options, reg, hostRegistry));
+        } else if (options.count("check-net")) {
+            std::unique_ptr<IBValidator> ptr = std::unique_ptr<IBNetworkValidator>(new IBNetworkValidator(ibmad_port, options, reg));
             validator.swap(ptr);
         }
 
         if (validator) {
-            validator->isValid();
+            validator->isValid(parser, output, hostRegistry);
         }
     } catch (std::exception & exception) {
         if (!output->getDidFinish()) {
-            output->failUnknown("Caught exception in main");
+            output->failUnknown() << "Caught exception in main: " << exception.what();
             output->finish();
         }
         std::cout << "Caught error in main(): " << exception.what() << std::endl;

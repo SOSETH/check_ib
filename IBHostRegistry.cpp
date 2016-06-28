@@ -6,6 +6,10 @@
 #include "IBHostRegistry.h"
 
 void IBHostRegistry::addIBHost(std::shared_ptr<IBHost> host){
+    if (hostByGUID[host->getGUID()])
+        throw IBException("Host already exists!");
+    if (hostByName[host->getName()])
+        throw IBException("Host already exists!");
     hostByGUID[host->getGUID()] = host;
     hostByName[host->getName()] = host;
 }

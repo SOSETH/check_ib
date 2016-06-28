@@ -19,9 +19,8 @@ class IBHostRegistry;
 class IBHost {
 public:
     static std::shared_ptr<IBHost> make_host(ibnd_node_t*, std::shared_ptr<IBPortRegistry>,
-                                             struct ibmad_port *ibmad_port, std::shared_ptr<IBNetfileParser> nf,
-                                             std::shared_ptr<IBHostRegistry> hostRegistry,
-                                             std::shared_ptr<boost::program_options::variables_map> options);
+                                             struct ibmad_port*, std::shared_ptr<IBNetfileParser>,
+                                             std::shared_ptr<IBHostRegistry>, boost::program_options::variables_map&);
 
     unsigned int getNumPorts() const {
         return numPorts;
