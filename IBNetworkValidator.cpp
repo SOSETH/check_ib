@@ -47,6 +47,7 @@ namespace check_ib {
 
         /* Today's favorite in *lemme-guess-what-this-pointer-thingy does*: What does sa_rpc_call return?
          * Since I couldn't find any documentation on this (surprise) I resorted to hexdumping stuff:
+         * 6 SMs:
          *   0 | 00 08 00 00 00 08 f1 04 03 99 12 4d 00 00 00 00 00 00 00 00 00 00 07 d4 03 00 00 00 00 00 00 00
          *        LID | res |         GUID          | SMKey                 | Activity c|st| Padding
          * 031 | 00 01 00 00 00 08 f1 04 03 99 14 29 00 00 00 00 00 00 00 00 00 06 6e 8a 02 00 00 00 00 00 00 00
@@ -55,13 +56,22 @@ namespace check_ib {
          * 127 | 00 02 00 00 00 08 f1 04 03 99 41 a9 00 00 00 00 00 00 00 00 00 01 c1 29 02 00 00 00 00 00 00 00
          * 159 | 00 0e 00 00 00 08 f1 04 03 99 41 aa 00 00 00 00 00 00 00 00 00 01 c1 12 02 00 00 00 00 00 00 00
          * 191 | 6c 2b db c5 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+         * 3 SMs:
+         *   0 | 00 03 00 00 00 08 f1 04 03 9a 34 12 00 00 00 00 00 00 00 00 00 01 74 3b 03 00 00 00 00 00 00 00
+         *        LID | res |         GUID          | SMKey                 | Activity c|st| Padding
+         * 031 | 00 02 00 00 00 08 f1 04 03 9a 36 09 00 00 00 00 00 00 00 00 00 00 ba d0 02 00 00 00 00 00 00 00
+         * 063 | 00 01 00 00 00 08 f1 04 03 9a 35 5d 00 00 00 00 00 00 00 00 00 01 18 1d 02 00 00 00 00 00 00 00
+         * 095 | 28 66 a2 00 00 00 00 00 80 8c c2 48 ff 7f 00 00 20 66 a2 00 09 00 00 00 90 8c c2 48 ff 7f 00 00
+         * 127 | cd c7 49 00 00 00 00 00 b0 8c c2 48 ff 7f 00 00 02 00 00 00 00 00 00 00 28 8c a3 00 00 00 00 00
+         * 159 | 68 e8 a2 00 00 00 00 00 d0 8c c2 48 ff 7f 00 00 1c dc ba da 8b 7f 00 00 20 8f c2 48 ff 7f 00 00
+         * 191 | 6c 2b db c5 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
          * where res is "reserved" as per infiniband specification and st is the status/priority field (4 bit each).
          * Each record looks exactly like it should (as per infiniband specification), the question is how are they aligned?
          * My copy of the IB spec tells me that an SMInfo record is 200 Bits (25 Bytes), in this case, its 32 Bytes
          * Probably alignment or something. It remains to find out how many records there are. Since "recsz" contains
          * - no, not how big the packet is, that'd be too easy, right? - the offset where data starts from the beginning
          * of the packet as needed for mad_get_field(4 bytes in this case), we need to manually find out how big our packet
-         * is:
+         * is. We assume that the padding for each valid row is zero
          */
         int size = 1024;
         while (size >= 0 && retval[size - 1] == 0) {
@@ -69,11 +79,19 @@ namespace check_ib {
         }
         if (size < 38)
             throw IBNetworkValidatorException("Implausible packet size!");
-        int numberOfManagers = (size - 4) / 32;
+        int numberOfManagers = 0;
+        for (uint8_t* row=retval ; row<retval+size; row+=32) {
+            // Padding starts at row+25 bytes and is 7 byte long
+            if ((*((uint32_t*)row+25)) == 0 && (*(row+29))==0 && (*(row+30))==0 && (*(row+31))==0)
+                numberOfManagers++;
+            else
+                break;
+        }
+
 
         if (options.count("dump")) {
             std::cout << "Packet size: " << size << std::endl;
-            dumpBuffer(retval + 4, 1020);
+            dumpBuffer(retval , 1020);
             std::cout << "Number of managers from pointer oracle: " << numberOfManagers << std::endl;
         }
 
@@ -99,6 +117,11 @@ namespace check_ib {
         std::list<uint64_t> registeredSMs = parser->getSubnetManagers();
         for (auto smInt = registeredSMs.begin(); smInt != registeredSMs.end(); smInt++) {
             auto smHost = (*hostRegistry)[*smInt];
+            if (!smHost) {
+                output->failWarning() << "There's a subnet manager on a host we don't know! GUID: " << std::hex << *smInt << std::dec;
+                isOk = false;
+                continue;
+            }
             auto ports = smHost->getPorts();
             for (auto port = ports.begin(); port != ports.end(); port++) {
                 if (workMap.count((*port)->getGuid()) == 0) {
