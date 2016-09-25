@@ -27,6 +27,7 @@ namespace check_ib {
 
     void IBNetfileParser::initialize() throw(IBNetfileParser::IBNetfileParserException) {
         defaultNodeName = "UNDEFINED";
+        numUnknownNodes = 0;
 
         netfile = YAML::LoadFile(file);
         if (!netfile["nodes"] || !netfile["nodes"].IsSequence())
@@ -47,11 +48,13 @@ namespace check_ib {
         }
     }
 
-    std::string IBNetfileParser::getNodeName(const uint64_t guid) const noexcept {
+    std::string IBNetfileParser::getNodeName(const uint64_t guid) noexcept {
         if (nodeNames.count(guid) == 1)
             return nodeNames.at(guid);
         else {
-            return defaultNodeName;
+            std::string name = std::string(defaultNodeName).append(std::to_string(numUnknownNodes++));
+            nodeNames[guid] = name;
+            return name;
         }
     }
 

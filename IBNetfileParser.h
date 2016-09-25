@@ -28,7 +28,7 @@ namespace check_ib {
         IBNetfileParser(std::string &&src) throw(IBNetfileParserException);
         IBNetfileParser(const std::string &src) throw(IBNetfileParserException);
 
-        std::string getNodeName(const uint64_t guid) const noexcept;
+        std::string getNodeName(const uint64_t guid) noexcept;
 
         void finishParsing(std::shared_ptr<IBHostRegistry>, bool) throw(IBNetfileParserException);
 
@@ -42,6 +42,7 @@ namespace check_ib {
         std::list<std::pair<std::shared_ptr<IBHost>, std::shared_ptr<IBHost>>> expectedLinks;
         std::string file, defaultNodeName;
         YAML::Node netfile;
+        unsigned int numUnknownNodes;
 
         void initialize() throw(IBNetfileParserException);
     };
