@@ -22,3 +22,5 @@ include_directories(/usr/include/infiniband ${Boost_INCLUDE_DIR})
 
 add_executable(check_ib ${SOURCE_FILES})
 target_link_libraries(check_ib ibnetdisc ibmad yaml-cpp ${Boost_LIBRARIES})
+
+install (TARGETS check_ib RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/sbin)
