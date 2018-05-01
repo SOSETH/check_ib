@@ -1,0 +1,15 @@
+Source: check-ib
+Section: utils
+Priority: optional
+Maintainer: Maximilian Falkenstein <mfalkenstein@sos.ethz.ch>
+Build-Depends: debhelper (>=9), libibumad-dev, libibnetdisc-dev,
+  libboost-all-dev, libibmad-dev, libopensm-dev, libyaml-cpp-dev
+Standards-Version: 3.9.8
+Vcs-Git: https://github.com/SOSETH/check_ib.git
+Vcs-Browser: https://github.com/SOSETH/check_ib
+
+Package: check-ib
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: check-ib can be used to check
+ an InfiniBand network's topology against a file
