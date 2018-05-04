@@ -5,3 +5,9 @@
 
 %:
 	dh $@ --parallel
+
+override_dh_auto_install:
+	dh_auto_install $@
+	mkdir -p debian/check-ib/usr/lib/nagios/plugins
+	mv debian/check-ib/usr/sbin/check_ib debian/check-ib/usr/lib/nagios/plugins/
+	rm -Rf debian/check-ib/usr/sbin
