@@ -37,7 +37,7 @@ namespace check_ib {
             noexcept : IBValidator(), ibmad_port(ibmad_port), options(options), portRegistry(portRegistry) { }
 
     bool IBNetworkValidator::isValid(std::shared_ptr<IBNetfileParser> parser, std::shared_ptr<IcingaOutput> output,
-                                     std::shared_ptr<IBHostRegistry> hostRegistry) throw(IBException) {
+                                     std::shared_ptr<IBHostRegistry> hostRegistry) {
         const std::unique_ptr<uint8_t[]> buf(new uint8_t[1024]);
         ib_portid_t portID = {0};
 

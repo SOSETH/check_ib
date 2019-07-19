@@ -39,7 +39,7 @@ namespace check_ib {
     }
 
     IBPort::IBPort(std::shared_ptr<IBHost> myHost, ibnd_port_t *port,
-                   struct ibmad_port *ibmad_port) throw(IBPortException) : host(myHost) {
+                   struct ibmad_port *ibmad_port) : host(myHost) {
         unsigned int capMask = mad_get_field(port->info, 0, IB_PORT_CAPMASK_F);
         linkWidthEnabled = mad_get_field(port->info, 0, IB_PORT_LINK_WIDTH_ENABLED_F);
         linkWidthActive = getLinkMaxWidthFromInt(mad_get_field(port->info, 0, IB_PORT_LINK_WIDTH_ACTIVE_F));
@@ -100,7 +100,7 @@ namespace check_ib {
         }
     }
 
-    void IBPort::queryPort(ibnd_port_t *port, struct ibmad_port *srcport) throw(IBPortException) {
+    void IBPort::queryPort(ibnd_port_t *port, struct ibmad_port *srcport) {
         // Infiniband spec, section 13.4.2, C13-3: The data payload (...) for all MADs shall be exactly 256 bytes.
         // The buffers in ibqueryerrors are 1k however...
         const std::unique_ptr<uint8_t[]> buf(new uint8_t[1024]);
@@ -145,7 +145,7 @@ namespace check_ib {
         }
     }
 
-    void IBPort::resetCounters(ibnd_port_t *port, struct ibmad_port *srcport) throw(IBPortException) {
+    void IBPort::resetCounters(ibnd_port_t *port, struct ibmad_port *srcport) {
         if (port->node->type == IB_NODE_SWITCH && port->portnum == 0) {
             return;
         }
@@ -207,7 +207,7 @@ namespace check_ib {
 
     std::shared_ptr<IBPort> IBPort::make_port(std::shared_ptr<IBHost> myHost, ibnd_port_t *port,
                                               std::shared_ptr<IBPortRegistry> registry,
-                                              struct ibmad_port *ibmad_port) throw(IBPortException) {
+                                              struct ibmad_port *ibmad_port) {
         std::shared_ptr<IBPort> retval(new IBPort(myHost, port, ibmad_port));
         if (port->remoteport) {
             retval->peerAddress.reset(new IBAddress(port->remoteport));
@@ -221,7 +221,7 @@ namespace check_ib {
     }
 
     IBPort::LinkSpeed IBPort::getMaxLinkSpeedFromInt(const uint32_t lsInt, const uint32_t fdr10,
-                                                     const uint32_t eSpeed) const throw(IBPortException) {
+                                                     const uint32_t eSpeed) const {
         if (eSpeed & 2) {
             return EDR;
         } else if (eSpeed & 1) {
@@ -245,7 +245,7 @@ namespace check_ib {
         }
     }
 
-    IBPort::LinkWidth IBPort::getLinkMaxWidthFromInt(const uint32_t lwInt) const throw(IBPortException) {
+    IBPort::LinkWidth IBPort::getLinkMaxWidthFromInt(const uint32_t lwInt) const {
         if (lwInt & 8)
             return LW_12;
         else if (lwInt & 4)
@@ -257,21 +257,21 @@ namespace check_ib {
         throw IBPortException(guid, "Unknown link width!");
     }
 
-    IBPort::PHYSPortState IBPort::getPHYSPortStateFromInt(const uint32_t ppsInt) const throw(IBPortException) {
+    IBPort::PHYSPortState IBPort::getPHYSPortStateFromInt(const uint32_t ppsInt) const {
         if (ppsInt <= 7)
             return static_cast<PHYSPortState>(ppsInt);
         else
             throw IBPortException(guid, "Unknown physical port state");
     }
 
-    IBPort::LogPortState IBPort::getLogPortStateFromInt(const uint32_t lpsInt) const throw(IBPortException) {
+    IBPort::LogPortState IBPort::getLogPortStateFromInt(const uint32_t lpsInt) const {
         if (lpsInt <= 4)
             return static_cast<LogPortState>(lpsInt);
         else
             throw IBPortException(guid, "Unknown logical port state");
     }
 
-    std::ostream &operator<<(std::ostream &stream, const IBPort *port) throw(IBPort::IBPortException) {
+    std::ostream &operator<<(std::ostream &stream, const IBPort *port) {
         stream << "Port GUID " << std::hex << port->getGuid() << std::dec << " LID " << port->getLid()
         << ", port number " << port->getPortNum() << std::endl
         << "\t Link:" << std::endl

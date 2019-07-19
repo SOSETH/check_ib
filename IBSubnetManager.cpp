@@ -23,8 +23,7 @@
 #include "IBHost.h"
 
 namespace check_ib {
-    IBSubnetManager::IBSubnetManager(uint8_t *ptr, std::shared_ptr<IBPortRegistry> portReg)
-            throw(IBSubnetManagerException) {
+    IBSubnetManager::IBSubnetManager(uint8_t *ptr, std::shared_ptr<IBPortRegistry> portReg) {
         int iState = mad_get_field(ptr + 4, 0, IB_SMINFO_STATE_F);
         switch (iState) {
             case 0:

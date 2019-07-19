@@ -116,7 +116,7 @@ namespace check_ib {
             return linkWidthSupported;
         }
 
-        LinkWidth getMaxLinkWidthSupported() const throw(IBPortException) {
+        LinkWidth getMaxLinkWidthSupported() const {
             return getLinkMaxWidthFromInt(linkWidthSupported);
         }
 
@@ -124,7 +124,7 @@ namespace check_ib {
             return linkWidthEnabled;
         }
 
-        LinkWidth getMaxLinkWidthEnabled() const throw(IBPortException) {
+        LinkWidth getMaxLinkWidthEnabled() const {
             return getLinkMaxWidthFromInt(linkWidthEnabled);
         }
 
@@ -150,7 +150,7 @@ namespace check_ib {
 
         static std::shared_ptr<IBPort> make_port(std::shared_ptr<IBHost>, ibnd_port_t *,
                                                  std::shared_ptr<IBPortRegistry>,
-                                                 struct ibmad_port *ibmad_port) throw(IBPortException);
+                                                 struct ibmad_port *ibmad_port);
 
         const std::weak_ptr<IBHost> getHost() const noexcept {
             return host;
@@ -178,7 +178,7 @@ namespace check_ib {
 
         uint64_t operator[](const PortAttribute) noexcept;
 
-        void resetCounters(ibnd_port_t *, struct ibmad_port *) throw(IBPortException);
+        void resetCounters(ibnd_port_t *, struct ibmad_port *);
 
         IBAddress getPeerAddr() const noexcept {
             return *peerAddress;
@@ -192,7 +192,7 @@ namespace check_ib {
         }
 
     protected:
-        IBPort(std::shared_ptr<IBHost> host, ibnd_port_t *port, struct ibmad_port *ibmad_port) throw(IBPortException);
+        IBPort(std::shared_ptr<IBHost> host, ibnd_port_t *port, struct ibmad_port *ibmad_port);
 
         PHYSPortState statePhysical;
         LogPortState stateLogical;
@@ -208,15 +208,15 @@ namespace check_ib {
         std::map<PortAttribute, uint64_t> values;
 
         LinkSpeed getMaxLinkSpeedFromInt(const uint32_t lsInt, const uint32_t fdr10,
-                                         const uint32_t eSpeed) const throw(IBPortException);
+                                         const uint32_t eSpeed) const;
 
-        LinkWidth getLinkMaxWidthFromInt(const uint32_t lwInt) const throw(IBPortException);
+        LinkWidth getLinkMaxWidthFromInt(const uint32_t lwInt) const;
 
-        PHYSPortState getPHYSPortStateFromInt(const uint32_t ppsInt) const throw(IBPortException);
+        PHYSPortState getPHYSPortStateFromInt(const uint32_t ppsInt) const;
 
-        LogPortState getLogPortStateFromInt(const uint32_t lpsInt) const throw(IBPortException);
+        LogPortState getLogPortStateFromInt(const uint32_t lpsInt) const;
 
-        void queryPort(ibnd_port_t *, struct ibmad_port *) throw(IBPortException);
+        void queryPort(ibnd_port_t *, struct ibmad_port *);
 
     private:
         int numAttrs = 10;
@@ -270,6 +270,6 @@ namespace check_ib {
     std::ostream &operator<<(std::ostream &, const IBPort::LinkWidth) noexcept;
     std::ostream &operator<<(std::ostream &, const IBPort::LinkSpeed) noexcept;
     std::ostream &operator<<(std::ostream &, const IBPort::PortAttribute) noexcept;
-    std::ostream &operator<<(std::ostream &, const IBPort *) throw(IBPort::IBPortException);
+    std::ostream &operator<<(std::ostream &, const IBPort *);
 }
 #endif //CHECK_IB_IBPORT_H

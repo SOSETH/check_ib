@@ -21,7 +21,7 @@
 #include "IBException.h"
 
 namespace check_ib {
-    void IBHostRegistry::addIBHost(std::shared_ptr<IBHost> host) throw(IBException) {
+    void IBHostRegistry::addIBHost(std::shared_ptr<IBHost> host) {
         if (hostByGUID[host->getGUID()])
             throw IBException("Host already exists!");
         if (hostByName[host->getName()])

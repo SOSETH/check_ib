@@ -33,7 +33,7 @@ namespace check_ib {
     std::shared_ptr<IBHost> IBHost::make_host(ibnd_node_t *host, std::shared_ptr<IBPortRegistry> myRegistry,
                                               struct ibmad_port *ibmad_port, std::shared_ptr<IBNetfileParser> nf,
                                               std::shared_ptr<IBHostRegistry> hostRegistry,
-                                              boost::program_options::variables_map &options) throw(IBException) {
+                                              boost::program_options::variables_map &options) {
         std::shared_ptr<IBHost> retval(new IBHost(myRegistry));
         retval->guid = host->guid;
         retval->numPorts = static_cast<unsigned int>(host->numports);

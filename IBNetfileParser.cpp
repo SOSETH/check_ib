@@ -24,22 +24,22 @@
 
 namespace check_ib {
 
-    IBNetfileParser::IBNetfileParser(std::string &src) throw(IBNetfileParser::IBNetfileParserException) {
+    IBNetfileParser::IBNetfileParser(std::string &src) {
         this->file = src;
         initialize();
     }
 
-    IBNetfileParser::IBNetfileParser(std::string &&src) throw(IBNetfileParser::IBNetfileParserException) {
+    IBNetfileParser::IBNetfileParser(std::string &&src) {
         this->file = src;
         initialize();
     }
 
-    IBNetfileParser::IBNetfileParser(const std::string &src) throw(IBNetfileParser::IBNetfileParserException) {
+    IBNetfileParser::IBNetfileParser(const std::string &src) {
         this->file = src;
         initialize();
     }
 
-    void IBNetfileParser::initialize() throw(IBNetfileParser::IBNetfileParserException) {
+    void IBNetfileParser::initialize() {
         defaultNodeName = "UNDEFINED";
         numUnknownNodes = 0;
 
@@ -72,8 +72,7 @@ namespace check_ib {
         }
     }
 
-    void IBNetfileParser::finishParsing(std::shared_ptr<IBHostRegistry> hostReg, bool throwOnMissingHost)
-            throw(IBNetfileParser::IBNetfileParserException) {
+    void IBNetfileParser::finishParsing(std::shared_ptr<IBHostRegistry> hostReg, bool throwOnMissingHost) {
         // Parse links
         YAML::Node links = netfile["links"];
         for (auto link = links.begin(); link != links.end(); link++) {

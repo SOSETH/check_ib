@@ -40,7 +40,7 @@ namespace check_ib {
                            std::shared_ptr<IBPortRegistry> portRegistry) noexcept;
 
         virtual bool isValid(std::shared_ptr<IBNetfileParser>, std::shared_ptr<IcingaOutput>,
-                             std::shared_ptr<IBHostRegistry>) throw(IBException);
+                             std::shared_ptr<IBHostRegistry>);
 
     private:
         struct ibmad_port *ibmad_port;

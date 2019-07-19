@@ -64,7 +64,7 @@ namespace check_ib {
             IBSubnetManagerException(const char *arg) noexcept : IBException(arg), domain_error(arg) { }
         };
 
-        IBSubnetManager(uint8_t *, std::shared_ptr<IBPortRegistry>) throw(IBSubnetManagerException);
+        IBSubnetManager(uint8_t *, std::shared_ptr<IBPortRegistry>);
     };
 
     std::ostream &operator<<(std::ostream &, const IBSubnetManager::SMState) noexcept;

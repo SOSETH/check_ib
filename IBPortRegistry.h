@@ -36,7 +36,7 @@ namespace check_ib {
 
         bool hasPortWithAddress(const IBAddress) const noexcept;
 
-        void registerInterestFor(IBAddress& guid, std::shared_ptr<IBPort>) throw(IBException);
+        void registerInterestFor(IBAddress& guid, std::shared_ptr<IBPort>);
 
         bool isMissingSomething(const bool printOnErr) const noexcept;
 

@@ -37,7 +37,7 @@ namespace check_ib {
         static std::shared_ptr<IBHost> make_host(ibnd_node_t *, std::shared_ptr<IBPortRegistry>,
                                                  struct ibmad_port *, std::shared_ptr<IBNetfileParser>,
                                                  std::shared_ptr<IBHostRegistry>,
-                                                 boost::program_options::variables_map &) throw(IBException);
+                                                 boost::program_options::variables_map &);
 
         unsigned int getNumPorts() const noexcept {
             return numPorts;

@@ -32,7 +32,7 @@ namespace check_ib {
         std::map<std::string, std::shared_ptr<IBHost>> hostByName;
 
     public:
-        void addIBHost(std::shared_ptr<IBHost>) throw(IBException);
+        void addIBHost(std::shared_ptr<IBHost>);
 
         std::shared_ptr<IBHost> operator[](const uint64_t) noexcept;
 

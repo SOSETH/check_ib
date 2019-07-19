@@ -52,7 +52,7 @@ namespace check_ib {
         return portRegistry.count(addr) == 1;
     }
 
-    void IBPortRegistry::registerInterestFor(IBAddress& addr, std::shared_ptr<IBPort> port) throw(IBException) {
+    void IBPortRegistry::registerInterestFor(IBAddress& addr, std::shared_ptr<IBPort> port) {
         if (portRegistry.count(addr))
             throw IBException("The port you're waiting for already exists!");
         interestRegistry[addr] = port;

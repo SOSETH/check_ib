@@ -33,7 +33,7 @@ namespace check_ib {
         IBHostValidator(const std::string &&) noexcept;
 
         virtual bool isValid(std::shared_ptr<IBNetfileParser>, std::shared_ptr<IcingaOutput>,
-                             std::shared_ptr<IBHostRegistry>) throw(IBException);
+                             std::shared_ptr<IBHostRegistry>);
     };
 }
 

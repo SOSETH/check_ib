@@ -30,7 +30,7 @@ namespace check_ib {
     IBHostValidator::IBHostValidator(const std::string &&hostname) noexcept : IBValidator(), myHostName(hostname) { }
 
     bool IBHostValidator::isValid(std::shared_ptr<IBNetfileParser> parser, std::shared_ptr<IcingaOutput> output,
-                                  std::shared_ptr<IBHostRegistry> registry) throw(IBException) {
+                                  std::shared_ptr<IBHostRegistry> registry) {
         bool isOK = true;
         if (!registry->has(myHostName)) {
             output->failCritical() << "Coudln't find host to check!";

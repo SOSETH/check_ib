@@ -31,7 +31,7 @@ namespace check_ib {
     class IBValidator {
     public:
         virtual bool isValid(std::shared_ptr<IBNetfileParser>, std::shared_ptr<IcingaOutput>,
-                             std::shared_ptr<IBHostRegistry>) throw(IBException) = 0;
+                             std::shared_ptr<IBHostRegistry>) = 0;
 
         const bool hasLinkTo(const std::shared_ptr<IBHost>, const std::shared_ptr<IBHost>) const noexcept;
     };
