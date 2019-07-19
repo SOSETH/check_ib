@@ -23,6 +23,7 @@
 #include <memory>
 #include <map>
 #include <sstream>
+#include <functional>
 
 namespace check_ib {
     class IBHost;
